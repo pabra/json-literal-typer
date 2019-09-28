@@ -69,7 +69,7 @@ interface Root {
 - [quicktype] - Generate types and converters from JSON, Schema, and GraphQL
 - [ts-ast-viewer] - TypeScript AST viewer
 
-[convert jsons to typescript interfaces]: https://github.com/MariusAlch/json-to-ts
+[json-to-ts]: https://github.com/MariusAlch/json-to-ts
 [json2ts]: http://www.json2ts.com/
 [quicktype]: https://github.com/quicktype/quicktype
 [ts-ast-viewer]: https://github.com/dsherret/ts-ast-viewer
