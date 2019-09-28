@@ -15,7 +15,6 @@
     "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run lint",
-    "pretest": "npm run clean",
     "test": "jest --config jestconfig.json"
   },
   "keywords": [
