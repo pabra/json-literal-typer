@@ -11,6 +11,10 @@
     "clean": "rimraf lib/*",
     "prebuild": "npm run clean",
     "build": "tsc",
+    "lint": "eslint src/ --ext .js --ext .ts --ext .jsx --ext .tsx",
+    "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm test && npm run lint",
     "pretest": "npm run clean",
     "test": "jest --config jestconfig.json"
   },
