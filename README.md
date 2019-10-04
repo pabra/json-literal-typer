@@ -17,19 +17,19 @@ this:
 ```json
 {
   "stations": [
-    { "id": 1, "name": "station A", "status": "OPEN", "attibutes": ["fast"] },
+    { "id": 1, "name": "station A", "status": "OPEN", "attributes": ["fast"] },
     {
       "id": 2,
       "name": "station B",
       "status": "OPEN",
-      "attibutes": ["fast", "24/7"],
+      "attributes": ["fast", "24/7"],
       "operator": "Station Corp."
     },
     {
       "id": 3,
       "name": "station C",
       "status": "CLOSED",
-      "attibutes": [],
+      "attributes": [],
       "operator": "ACME Inc."
     }
   ]
@@ -43,7 +43,7 @@ interface Station {
   id: number;
   name: string;
   status: string;
-  attibutes: string[];
+  attributes: string[];
   operator?: string;
 }
 interface RootObject {
@@ -55,12 +55,13 @@ Nice. But what if you could get:
 
 ```typescript
 interface Stations {
-  attibutes: ('24/7' | 'fast')[];
+  attributes: ('24/7' | 'fast')[];
   id: 1 | 2 | 3;
   name: 'station A' | 'station B' | 'station C';
   operator?: 'ACME Inc.' | 'Station Corp.';
   status: 'CLOSED' | 'OPEN';
 }
+
 interface Root {
   stations: Stations[];
 }
