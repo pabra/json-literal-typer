@@ -5,6 +5,10 @@ given JSON structure for you. But they only give you the basic types (`sting`,
 `number`, etc.). What if there is an API where you want to get its literal
 values/types?
 
+# Demo
+
+There is a live demo at [https://json-literal-typer.peppnet.de](https://json-literal-typer.peppnet.de)
+
 # Example
 
 Let's assume there is an API for gas stations. It will respond with data like
