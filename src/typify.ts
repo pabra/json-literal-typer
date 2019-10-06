@@ -1,169 +1,418 @@
-import * as ts from 'typescript';
-
 import {
   ValuesByType,
   PrimitiveObject,
+  NullObject,
+  StringObject,
+  NumberObject,
+  BooleanObject,
   ArrayObject,
   ObjectObject,
+  JsonTypeStr,
 } from './analyze';
+
+const invalidIdentifiers = new Set<string>([
+  'Array',
+  'ArrayBuffer',
+  'AsyncFunction',
+  'Atomics',
+  'BigInt',
+  'BigInt64Array',
+  'BigUint64Array',
+  'Boolean',
+  'DataView',
+  'Date',
+  'Error',
+  'EvalError',
+  'Float32Array',
+  'Float64Array',
+  'Function',
+  'Generator',
+  'GeneratorFunction',
+  'Infinity',
+  'Int16Array',
+  'Int32Array',
+  'Int8Array',
+  'InternalError',
+  'Intl',
+  'JSON',
+  'Map',
+  'Math',
+  'NaN',
+  'Null',
+  'Number',
+  'Object',
+  'Promise',
+  'Proxy',
+  'RangeError',
+  'ReferenceError',
+  'Reflect',
+  'RegExp',
+  'Set',
+  'SharedArrayBuffer',
+  'String',
+  'Symbol',
+  'SyntaxError',
+  'TypeError',
+  'URIError',
+  'Uint16Array',
+  'Uint32Array',
+  'Uint8Array',
+  'Uint8ClampedArray',
+  'Undefined',
+  'WeakMap',
+  'WeakSet',
+  'WebAssembly',
+  'XMLHttpRequest',
+]);
 
 function uniqueIdentifier(name: string, identifiers: Set<string>) {
   const capitalizedName = name.substr(0, 1).toUpperCase() + name.substr(1);
   let testName = capitalizedName;
   let i = 2;
 
-  while (identifiers.has(testName)) {
+  while (invalidIdentifiers.has(testName) || identifiers.has(testName)) {
     testName = `${capitalizedName}${i++}`;
   }
+
+  identifiers.add(testName);
 
   return testName;
 }
 
-type TaggedNodes =
-  | { type: 'union'; data: ts.UnionTypeNode }
-  | {
-      type: 'single';
-      data:
-        | ts.TypeReferenceNode
-        | ts.ArrayTypeNode
-        | ts.LiteralTypeNode
-        | ts.NullLiteral;
-    };
+interface Node {
+  name: string;
+  identifier: string;
+  path: string;
+  stringified: string;
+}
 
-function typifyValuesByType(
+interface Nodes {
+  byPath: Record<string, Node>;
+  byOrder: Node[];
+}
+
+interface CountedValues {
+  count: number;
+  value: string;
+}
+
+function getValuesByType(
   typeValues: ValuesByType,
-  name: string,
-  arrayOfNodes: ts.InterfaceDeclaration[],
+  path: string,
+  nodes: Nodes,
   ids: Set<string>,
-) {
-  const typeNodes = Object.values(typeValues).map(
-    (tv: PrimitiveObject | ArrayObject | ObjectObject) =>
-      typifyThing(tv, name, arrayOfNodes, ids).data, // eslint-disable-line @typescript-eslint/no-use-before-define
-  );
-  switch (typeNodes.length) {
-    case 0:
-      return null;
-    case 1:
-      return { type: 'single', data: typeNodes[0] };
-    default:
-      return { type: 'union', data: ts.createUnionTypeNode(typeNodes) };
+  // forceType: boolean,
+  baseType: boolean,
+): CountedValues {
+  const values = Object.keys(typeValues)
+    .sort()
+    .map(typeName => {
+      const nestedThing = typeValues[typeName as JsonTypeStr];
+      if (!nestedThing) {
+        throw new Error();
+      }
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      return typifyThing(
+        nestedThing,
+        path,
+        nodes,
+        ids,
+        path === '$' || nestedThing.type === 'object',
+        baseType,
+      );
+    });
+
+  return {
+    count: values.reduce((sum, v) => sum + v.count, 0),
+    value: values.map(v => v.value).join(' | '),
+  };
+}
+
+function addNode(node: Node, nodes: Nodes) {
+  nodes.byOrder.push(node);
+
+  if (Object.prototype.hasOwnProperty.call(nodes.byPath, node.path)) {
+    throw new Error(
+      'there is already a node for path ' +
+        node.path +
+        ' ' +
+        nodes.byPath[node.path].name,
+    );
   }
+
+  nodes.byPath[node.path] = node;
+}
+
+function typifyNull(
+  thing: NullObject,
+  path: string,
+  nodes: Nodes,
+  ids: Set<string>,
+  forceType: boolean,
+  baseType: boolean,
+) {
+  const value = baseType ? thing.type : thing.type;
+
+  if (!forceType) {
+    return { count: 1, value };
+  }
+
+  const identifier = uniqueIdentifier(thing.name, ids);
+  const stringified = `type ${identifier} = ${value};`;
+  const node: Node = { name: thing.name, identifier, path, stringified };
+
+  addNode(node, nodes);
+
+  return { count: 1, value: identifier };
+}
+
+function typifyString(
+  thing: StringObject,
+  path: string,
+  nodes: Nodes,
+  ids: Set<string>,
+  forceType: boolean,
+  baseType: boolean,
+) {
+  const value = baseType
+    ? thing.type
+    : Array.from(thing.values)
+        .sort()
+        .map(str => `"${str.replace(/"/g, '\\"')}"`)
+        .join(' | ');
+
+  if (!forceType) {
+    return { count: thing.values.size, value };
+  }
+
+  const identifier = uniqueIdentifier(thing.name, ids);
+  const stringified = `type ${identifier} = ${value};`;
+  const node: Node = { name: thing.name, identifier, path, stringified };
+
+  addNode(node, nodes);
+
+  return { count: 1, value: identifier };
+}
+
+function typifyNumber(
+  thing: NumberObject,
+  path: string,
+  nodes: Nodes,
+  ids: Set<string>,
+  forceType: boolean,
+  baseType: boolean,
+) {
+  const value = baseType
+    ? thing.type
+    : Array.from(thing.values)
+        .sort()
+        .join(' | ');
+
+  if (!forceType) {
+    return { count: thing.values.size, value };
+  }
+
+  const identifier = uniqueIdentifier(thing.name, ids);
+  const stringified = `type ${identifier} = ${value};`;
+  const node: Node = { name: thing.name, identifier, path, stringified };
+
+  addNode(node, nodes);
+
+  return { count: 1, value: identifier };
+}
+
+function typifyBoolean(
+  thing: BooleanObject,
+  path: string,
+  nodes: Nodes,
+  ids: Set<string>,
+  forceType: boolean,
+  baseType: boolean,
+) {
+  const value = baseType
+    ? thing.type
+    : Array.from(thing.values)
+        .sort()
+        .join(' | ');
+
+  if (!forceType) {
+    return { count: thing.values.size, value };
+  }
+
+  const identifier = uniqueIdentifier(thing.name, ids);
+  const stringified = `type ${identifier} = ${value};`;
+  const node: Node = { name: thing.name, identifier, path, stringified };
+
+  addNode(node, nodes);
+
+  return { count: 1, value: identifier };
+}
+
+function typifyArray(
+  thing: ArrayObject,
+  path: string,
+  nodes: Nodes,
+  ids: Set<string>,
+  forceType: boolean,
+  baseType: boolean,
+) {
+  const values = getValuesByType(
+    thing.values,
+    path + '[*]',
+    nodes,
+    ids,
+    // forceType,
+    baseType,
+  );
+
+  const value =
+    values.count === 0
+      ? 'never[]'
+      : values.count === 1
+      ? `${values.value}[]`
+      : `(${values.value})[]`;
+
+  if (!forceType) {
+    return { count: 1, value };
+  }
+
+  const identifier = uniqueIdentifier(thing.name, ids);
+  const stringified = `type ${identifier} = ${value};`;
+  const node: Node = { name: thing.name, identifier, path, stringified };
+
+  addNode(node, nodes);
+
+  return { count: 1, value: identifier };
+}
+
+function typifyObject(
+  thing: ObjectObject,
+  path: string,
+  nodes: Nodes,
+  ids: Set<string>,
+  forceType: boolean,
+  baseType: boolean,
+) {
+  const innerValue = Object.keys(thing.keys)
+    .sort()
+    .map(keyname => {
+      const values = getValuesByType(
+        thing.keys[keyname].values,
+        path + `['${keyname}']`,
+        nodes,
+        ids,
+        // forceType,
+        baseType,
+      );
+
+      return `${keyname}${thing.keys[keyname].optional ? '?' : ''}: ${
+        values.value
+      };`;
+    })
+    .join('\n  ');
+
+  const value = `{\n  ${innerValue}\n}`;
+
+  if (!forceType) {
+    return { count: 1, value };
+  }
+
+  const identifier = uniqueIdentifier(thing.name, ids);
+  const stringified = `interface ${identifier} ${value}`;
+  const node: Node = { name: thing.name, identifier, path, stringified };
+
+  addNode(node, nodes);
+
+  return { count: 1, value: identifier };
 }
 
 function typifyThing(
   thing: PrimitiveObject | ArrayObject | ObjectObject,
-  name: string,
-  arrayOfNodes: ts.InterfaceDeclaration[],
+  path: string,
+  nodes: Nodes,
   ids: Set<string>,
-): TaggedNodes {
-  let nodes: ts.LiteralTypeNode[];
-  if (thing.type === 'null') {
-    return { type: 'single', data: ts.createNull() };
-  } else if (thing.type === 'string') {
-    nodes = Array.from(thing.values)
-      .sort()
-      .map(str => ts.createLiteralTypeNode(ts.createStringLiteral(str)));
-    return nodes.length > 1
-      ? { type: 'union', data: ts.createUnionTypeNode(nodes) }
-      : { type: 'single', data: nodes[0] };
-  } else if (thing.type === 'number') {
-    nodes = Array.from(thing.values)
-      .sort()
-      .map(num =>
-        ts.createLiteralTypeNode(ts.createNumericLiteral(String(num))),
+  forceType = false,
+  baseType = false,
+): CountedValues {
+  switch (thing.type) {
+    case 'null':
+      return typifyNull(
+        thing,
+        path + `{${thing.type}}`,
+        nodes,
+        ids,
+        forceType,
+        baseType,
       );
-    return nodes.length > 1
-      ? { type: 'union', data: ts.createUnionTypeNode(nodes) }
-      : { type: 'single', data: nodes[0] };
-  } else if (thing.type === 'boolean') {
-    nodes = Array.from(thing.values)
-      .sort()
-      .map(bool =>
-        ts.createLiteralTypeNode(
-          bool === true ? ts.createTrue() : ts.createFalse(),
-        ),
+
+    case 'string':
+      return typifyString(
+        thing,
+        path + `{${thing.type}}`,
+        nodes,
+        ids,
+        forceType,
+        baseType,
       );
-    return nodes.length > 1
-      ? { type: 'union', data: ts.createUnionTypeNode(nodes) }
-      : { type: 'single', data: nodes[0] };
-  } else if (thing.type === 'array') {
-    const typifiedValues = typifyValuesByType(
-      thing.values,
-      name,
-      arrayOfNodes,
-      ids,
-    );
-    const arrayNodes =
-      typifiedValues === null
-        ? ts.createKeywordTypeNode(ts.SyntaxKind.NeverKeyword)
-        : typifiedValues.type === 'union'
-        ? ts.createParenthesizedType(typifiedValues.data)
-        : typifiedValues.data;
-    return { type: 'single', data: ts.createArrayTypeNode(arrayNodes) };
-  } else if (thing.type === 'object') {
-    const uniqueName = uniqueIdentifier(name, ids);
-    const identifier = ts.createIdentifier(uniqueName);
 
-    const inter = ts.createInterfaceDeclaration(
-      undefined,
-      undefined,
-      identifier,
-      undefined,
-      undefined,
-      Object.keys(thing.keys)
-        .sort()
-        .map(key => {
-          const data = thing.keys[key];
-          const typifiedValues = typifyValuesByType(
-            data.values,
-            key,
-            arrayOfNodes,
-            ids,
-          );
+    case 'number':
+      return typifyNumber(
+        thing,
+        path + `{${thing.type}}`,
+        nodes,
+        ids,
+        forceType,
+        baseType,
+      );
 
-          return ts.createPropertySignature(
-            undefined,
-            ts.createIdentifier(key),
-            data.optional
-              ? ts.createToken(ts.SyntaxKind.QuestionToken)
-              : undefined,
-            typifiedValues === null
-              ? ts.createTypeLiteralNode([])
-              : typifiedValues.data,
-            undefined,
-          );
-        }),
-    );
+    case 'boolean':
+      return typifyBoolean(
+        thing,
+        path + `{${thing.type}}`,
+        nodes,
+        ids,
+        forceType,
+        baseType,
+      );
 
-    arrayOfNodes.push(inter);
+    case 'array':
+      return typifyArray(
+        thing,
+        path + `{${thing.type}}`,
+        nodes,
+        ids,
+        forceType,
+        baseType,
+      );
 
-    return {
-      type: 'single',
-      data: ts.createTypeReferenceNode(identifier, undefined),
-    };
-  } else {
-    throw new Error();
+    case 'object':
+      return typifyObject(
+        thing,
+        path + `{${thing.type}}`,
+        nodes,
+        ids,
+        forceType,
+        baseType,
+      );
+
+    default:
+      throw new Error();
   }
 }
 
 function typify(result: PrimitiveObject | ArrayObject | ObjectObject) {
-  const arrayOfNodes: ts.InterfaceDeclaration[] = [];
+  const nodes: Nodes = { byPath: {}, byOrder: [] };
   const identifiers = new Set<string>();
-  typifyThing(result, 'root', arrayOfNodes, identifiers);
-  const nodeArray = ts.createNodeArray(arrayOfNodes);
-
-  const resultFile = ts.createSourceFile(
-    'someFileName.ts',
-    '',
-    ts.ScriptTarget.Latest,
-    false,
-    ts.ScriptKind.TS,
+  typifyThing(
+    result,
+    '$',
+    nodes,
+    identifiers,
+    true, // forceType
+    false, // baseType
   );
-  const printer = ts.createPrinter();
 
-  const res = printer.printList(ts.ListFormat.MultiLine, nodeArray, resultFile);
-
-  return res;
+  return nodes.byOrder.map(node => node.stringified).join('\n');
 }
 
 export default typify;

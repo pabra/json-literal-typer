@@ -83,12 +83,52 @@ test('should work with more complex objects', () => {
   expect(jsonResult).toEqual(expectation);
 });
 
-test('should return Types', () => {
-  const obj = { a: 1 };
-  const expectation = 'interface Root {\n    a: 1;\n}\n';
+const testData = [
+  { in: 'str', out: 'type Root = "str";' },
+  { in: 5, out: 'type Root = 5;' },
+  { in: false, out: 'type Root = false;' },
+  { in: null, out: 'type Root = null;' },
+  { in: {}, out: 'interface Root {\n  \n}' },
+  { in: [], out: 'type Root = never[];' },
+  { in: { a: 1 }, out: 'interface Root {\n  a: 1;\n}' },
+  {
+    in: {
+      data: [
+        {
+          id: 1,
+          name: 'b',
+          mix: 3,
+          strArr: ['d'],
+          optNull: null,
+        },
+        {
+          id: 2,
+          name: 'a',
+          mix: 'c',
+          strArr: ['e'],
+          optArr: [
+            {
+              bool: true,
+              mixArr: 4,
+              optNeverArr: [],
+            },
+            {
+              bool: false,
+              mixArr: ['f', 5],
+            },
+          ],
+        },
+      ],
+    },
+    out:
+      'interface OptArr {\n  bool: false | true;\n  mixArr: (5 | "f")[] | 4;\n  optNeverArr?: never[];\n}\ninterface Data {\n  id: 1 | 2;\n  mix: 3 | "c";\n  name: "a" | "b";\n  optArr?: OptArr[];\n  optNull?: null;\n  strArr: ("d" | "e")[];\n}\ninterface Root {\n  data: Data[];\n}',
+  },
+];
 
-  const analyzed = analyze(obj);
-  const typified = typify(analyzed);
-
-  expect(typified).toEqual(expectation);
+test('should return expected types', () => {
+  testData.forEach(data => {
+    const analyzed = analyze(data.in);
+    const typified = typify(analyzed);
+    expect(typified).toEqual(data.out);
+  });
 });

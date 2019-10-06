@@ -311,4 +311,5 @@ export {
   ArrayObject,
   ObjectObject,
   ValuesByType,
+  JsonTypeStr,
 };
