@@ -15,7 +15,8 @@
     "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run lint",
-    "test": "jest --config jestconfig.json"
+    "test": "jest --config jestconfig.json",
+    "test:debug": "node --inspect node_modules/.bin/jest --runInBand --config jestconfig.json"
   },
   "keywords": [
     "json",
