@@ -6,11 +6,13 @@ function jsonify(
   if (thingObject.type === 'array') {
     return {
       type: thingObject.type,
+      path: thingObject.path,
       values: Object.values(thingObject.values).map(v => jsonify(v)),
     };
   } else if (thingObject.type === 'object') {
     return {
       type: thingObject.type,
+      path: thingObject.path,
       keys: Object.entries(thingObject.keys).reduce<Record<string, any>>(
         (acc, [key, valuesObj]) => {
           const values: Record<string, any> = {
@@ -26,7 +28,10 @@ function jsonify(
       ),
     };
   } else {
-    const val: Record<string, any> = { type: thingObject.type };
+    const val: Record<string, any> = {
+      type: thingObject.type,
+      path: thingObject.path,
+    };
     if (thingObject.type !== 'null') {
       val.values = [...thingObject.values];
     }

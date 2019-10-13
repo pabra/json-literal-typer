@@ -8,6 +8,7 @@ import {
   ArrayObject,
   ObjectObject,
   JsonTypeStr,
+  ArrayMember,
 } from './analyze';
 
 const invalidIdentifiers = new Set<string>([
@@ -65,12 +66,28 @@ const invalidIdentifiers = new Set<string>([
   'XMLHttpRequest',
 ]);
 
-function uniqueIdentifier(name: string, identifiers: Set<string>) {
+function uniqueIdentifier(
+  thing: PrimitiveObject | ArrayObject | ObjectObject,
+  identifiers: Set<string>,
+) {
+  let name: string;
+  if (typeof thing.name === 'string') {
+    name = thing.name;
+  } else if (thing.parent !== null && typeof thing.parent.name === 'string') {
+    name = thing.parent.name;
+  } else {
+    name = 'list';
+  }
+
+  const localInvalidIdentifiers = new Set(invalidIdentifiers);
+  if (thing.parent !== null) {
+    localInvalidIdentifiers.add('Root');
+  }
   const capitalizedName = name.substr(0, 1).toUpperCase() + name.substr(1);
   let testName = capitalizedName;
   let i = 2;
 
-  while (invalidIdentifiers.has(testName) || identifiers.has(testName)) {
+  while (localInvalidIdentifiers.has(testName) || identifiers.has(testName)) {
     testName = `${capitalizedName}${i++}`;
   }
 
@@ -80,7 +97,7 @@ function uniqueIdentifier(name: string, identifiers: Set<string>) {
 }
 
 interface Node {
-  name: string;
+  name: string | ArrayMember;
   identifier: string;
   path: string;
   stringified: string;
@@ -96,14 +113,50 @@ interface CountedValues {
   value: string;
 }
 
-function getValuesByType(
-  typeValues: ValuesByType,
-  path: string,
-  nodes: Nodes,
-  ids: Set<string>,
-  // forceType: boolean,
-  baseType: boolean,
-): CountedValues {
+interface BaseTypifiyArgs {
+  nodes: Nodes;
+  ids: Set<string>;
+  config: Config;
+}
+
+interface TypifyThingArgs extends BaseTypifiyArgs {
+  thing: PrimitiveObject | ArrayObject | ObjectObject;
+}
+
+interface TypifyNullArgs extends BaseTypifiyArgs {
+  thing: NullObject;
+}
+
+interface TypifyBooleanArgs extends BaseTypifiyArgs {
+  thing: BooleanObject;
+}
+
+interface TypifyNumberArgs extends BaseTypifiyArgs {
+  thing: NumberObject;
+}
+
+interface TypifyStringArgs extends BaseTypifiyArgs {
+  thing: StringObject;
+}
+
+interface TypifyArrayArgs extends BaseTypifiyArgs {
+  thing: ArrayObject;
+}
+
+interface TypifyObjecArgs extends BaseTypifiyArgs {
+  thing: ObjectObject;
+}
+
+interface ValueByTypeArgs extends BaseTypifiyArgs {
+  typeValues: ValuesByType;
+}
+
+function getValuesByType({
+  typeValues,
+  nodes,
+  ids,
+  config,
+}: ValueByTypeArgs): CountedValues {
   const values = Object.keys(typeValues)
     .sort()
     .map(typeName => {
@@ -112,14 +165,12 @@ function getValuesByType(
         throw new Error();
       }
       // eslint-disable-next-line @typescript-eslint/no-use-before-define
-      return typifyThing(
-        nestedThing,
-        path,
+      return typifyThing({
+        thing: nestedThing,
         nodes,
         ids,
-        path === '$' || nestedThing.type === 'object',
-        baseType,
-      );
+        config,
+      });
     });
 
   return {
@@ -136,44 +187,39 @@ function addNode(node: Node, nodes: Nodes) {
       'there is already a node for path ' +
         node.path +
         ' ' +
-        nodes.byPath[node.path].name,
+        String(nodes.byPath[node.path].name),
     );
   }
 
   nodes.byPath[node.path] = node;
 }
 
-function typifyNull(
-  thing: NullObject,
-  path: string,
-  nodes: Nodes,
-  ids: Set<string>,
-  forceType: boolean,
-  baseType: boolean,
-) {
+function typifyNull({ thing, nodes, ids, config }: TypifyNullArgs) {
+  const forceType = (config.byPath[thing.path] || {}).forceType === true;
+  const baseType = (config.byPath[thing.path] || {}).baseType === true;
   const value = baseType ? thing.type : thing.type;
 
   if (!forceType) {
     return { count: 1, value };
   }
 
-  const identifier = uniqueIdentifier(thing.name, ids);
+  const identifier = uniqueIdentifier(thing, ids);
   const stringified = `type ${identifier} = ${value};`;
-  const node: Node = { name: thing.name, identifier, path, stringified };
+  const node: Node = {
+    name: thing.name,
+    identifier,
+    path: thing.path,
+    stringified,
+  };
 
   addNode(node, nodes);
 
   return { count: 1, value: identifier };
 }
 
-function typifyString(
-  thing: StringObject,
-  path: string,
-  nodes: Nodes,
-  ids: Set<string>,
-  forceType: boolean,
-  baseType: boolean,
-) {
+function typifyString({ thing, nodes, ids, config }: TypifyStringArgs) {
+  const forceType = (config.byPath[thing.path] || {}).forceType === true;
+  const baseType = (config.byPath[thing.path] || {}).baseType === true;
   const value = baseType
     ? thing.type
     : Array.from(thing.values)
@@ -185,23 +231,23 @@ function typifyString(
     return { count: thing.values.size, value };
   }
 
-  const identifier = uniqueIdentifier(thing.name, ids);
+  const identifier = uniqueIdentifier(thing, ids);
   const stringified = `type ${identifier} = ${value};`;
-  const node: Node = { name: thing.name, identifier, path, stringified };
+  const node: Node = {
+    name: thing.name,
+    identifier,
+    path: thing.path,
+    stringified,
+  };
 
   addNode(node, nodes);
 
   return { count: 1, value: identifier };
 }
 
-function typifyNumber(
-  thing: NumberObject,
-  path: string,
-  nodes: Nodes,
-  ids: Set<string>,
-  forceType: boolean,
-  baseType: boolean,
-) {
+function typifyNumber({ thing, nodes, ids, config }: TypifyNumberArgs) {
+  const forceType = (config.byPath[thing.path] || {}).forceType === true;
+  const baseType = (config.byPath[thing.path] || {}).baseType === true;
   const value = baseType
     ? thing.type
     : Array.from(thing.values)
@@ -212,23 +258,23 @@ function typifyNumber(
     return { count: thing.values.size, value };
   }
 
-  const identifier = uniqueIdentifier(thing.name, ids);
+  const identifier = uniqueIdentifier(thing, ids);
   const stringified = `type ${identifier} = ${value};`;
-  const node: Node = { name: thing.name, identifier, path, stringified };
+  const node: Node = {
+    name: thing.name,
+    identifier,
+    path: thing.path,
+    stringified,
+  };
 
   addNode(node, nodes);
 
   return { count: 1, value: identifier };
 }
 
-function typifyBoolean(
-  thing: BooleanObject,
-  path: string,
-  nodes: Nodes,
-  ids: Set<string>,
-  forceType: boolean,
-  baseType: boolean,
-) {
+function typifyBoolean({ thing, nodes, ids, config }: TypifyBooleanArgs) {
+  const forceType = (config.byPath[thing.path] || {}).forceType === true;
+  const baseType = (config.byPath[thing.path] || {}).baseType === true;
   const value = baseType
     ? thing.type
     : Array.from(thing.values)
@@ -239,31 +285,28 @@ function typifyBoolean(
     return { count: thing.values.size, value };
   }
 
-  const identifier = uniqueIdentifier(thing.name, ids);
+  const identifier = uniqueIdentifier(thing, ids);
   const stringified = `type ${identifier} = ${value};`;
-  const node: Node = { name: thing.name, identifier, path, stringified };
+  const node: Node = {
+    name: thing.name,
+    identifier,
+    path: thing.path,
+    stringified,
+  };
 
   addNode(node, nodes);
 
   return { count: 1, value: identifier };
 }
 
-function typifyArray(
-  thing: ArrayObject,
-  path: string,
-  nodes: Nodes,
-  ids: Set<string>,
-  forceType: boolean,
-  baseType: boolean,
-) {
-  const values = getValuesByType(
-    thing.values,
-    path + '[*]',
+function typifyArray({ thing, nodes, ids, config }: TypifyArrayArgs) {
+  const forceType = (config.byPath[thing.path] || {}).forceType === true;
+  const values = getValuesByType({
+    typeValues: thing.values,
     nodes,
     ids,
-    // forceType,
-    baseType,
-  );
+    config,
+  });
 
   const value =
     values.count === 0
@@ -276,34 +319,32 @@ function typifyArray(
     return { count: 1, value };
   }
 
-  const identifier = uniqueIdentifier(thing.name, ids);
+  const identifier = uniqueIdentifier(thing, ids);
   const stringified = `type ${identifier} = ${value};`;
-  const node: Node = { name: thing.name, identifier, path, stringified };
+  const node: Node = {
+    name: thing.name,
+    identifier,
+    path: thing.path,
+    stringified,
+  };
 
   addNode(node, nodes);
 
   return { count: 1, value: identifier };
 }
 
-function typifyObject(
-  thing: ObjectObject,
-  path: string,
-  nodes: Nodes,
-  ids: Set<string>,
-  forceType: boolean,
-  baseType: boolean,
-) {
+function typifyObject({ thing, nodes, ids, config }: TypifyObjecArgs) {
+  const forceType =
+    (config.byPath[thing.path] || {}).forceType === false ? false : true;
   const innerValue = Object.keys(thing.keys)
     .sort()
     .map(keyname => {
-      const values = getValuesByType(
-        thing.keys[keyname].values,
-        path + `['${keyname}']`,
+      const values = getValuesByType({
+        typeValues: thing.keys[keyname].values,
         nodes,
         ids,
-        // forceType,
-        baseType,
-      );
+        config,
+      });
 
       return `${keyname}${thing.keys[keyname].optional ? '?' : ''}: ${
         values.value
@@ -317,100 +358,76 @@ function typifyObject(
     return { count: 1, value };
   }
 
-  const identifier = uniqueIdentifier(thing.name, ids);
+  const identifier = uniqueIdentifier(thing, ids);
   const stringified = `interface ${identifier} ${value}`;
-  const node: Node = { name: thing.name, identifier, path, stringified };
+  const node: Node = {
+    name: thing.name,
+    identifier,
+    path: thing.path,
+    stringified,
+  };
 
   addNode(node, nodes);
 
   return { count: 1, value: identifier };
 }
 
-function typifyThing(
-  thing: PrimitiveObject | ArrayObject | ObjectObject,
-  path: string,
-  nodes: Nodes,
-  ids: Set<string>,
-  forceType = false,
-  baseType = false,
-): CountedValues {
+function typifyThing({
+  thing,
+  nodes,
+  ids,
+  config,
+}: TypifyThingArgs): CountedValues {
   switch (thing.type) {
     case 'null':
-      return typifyNull(
-        thing,
-        path + `{${thing.type}}`,
-        nodes,
-        ids,
-        forceType,
-        baseType,
-      );
+      return typifyNull({ thing, nodes, ids, config });
 
     case 'string':
-      return typifyString(
-        thing,
-        path + `{${thing.type}}`,
-        nodes,
-        ids,
-        forceType,
-        baseType,
-      );
+      return typifyString({ thing, nodes, ids, config });
 
     case 'number':
-      return typifyNumber(
-        thing,
-        path + `{${thing.type}}`,
-        nodes,
-        ids,
-        forceType,
-        baseType,
-      );
+      return typifyNumber({ thing, nodes, ids, config });
 
     case 'boolean':
-      return typifyBoolean(
-        thing,
-        path + `{${thing.type}}`,
-        nodes,
-        ids,
-        forceType,
-        baseType,
-      );
+      return typifyBoolean({ thing, nodes, ids, config });
 
     case 'array':
-      return typifyArray(
-        thing,
-        path + `{${thing.type}}`,
-        nodes,
-        ids,
-        forceType,
-        baseType,
-      );
+      return typifyArray({ thing, nodes, ids, config });
 
     case 'object':
-      return typifyObject(
-        thing,
-        path + `{${thing.type}}`,
-        nodes,
-        ids,
-        forceType,
-        baseType,
-      );
+      return typifyObject({ thing, nodes, ids, config });
 
     default:
       throw new Error();
   }
 }
+interface Config {
+  maxLiteralPerType?: number;
+  byPath: Record<string, { forceType?: boolean; baseType?: boolean }>;
+}
+const baseConfig: Config = {
+  maxLiteralPerType: 10,
+  byPath: {},
+};
+const forcedConfig: Config = { byPath: { $: { forceType: true } } };
 
-function typify(result: PrimitiveObject | ArrayObject | ObjectObject) {
+function typify(
+  result: PrimitiveObject | ArrayObject | ObjectObject,
+  conf?: Config,
+) {
+  if (!conf) {
+    conf = { byPath: {} };
+  }
   const nodes: Nodes = { byPath: {}, byOrder: [] };
   const identifiers = new Set<string>();
-  typifyThing(
-    result,
-    '$',
+  const config: Config = { ...baseConfig, ...conf, ...forcedConfig } as const;
+  config.byPath = { ...conf.byPath, ...forcedConfig.byPath } as const;
+  typifyThing({
+    thing: result,
     nodes,
-    identifiers,
-    true, // forceType
-    false, // baseType
-  );
+    ids: identifiers,
+    config,
+  });
 
   return nodes.byOrder.map(node => node.stringified).join('\n');
 }

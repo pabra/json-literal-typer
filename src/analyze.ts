@@ -9,9 +9,15 @@ type JsonTypeStr =
   | 'null'
   | 'array';
 
+const arrayMember = Symbol('array member');
+
+type ArrayMember = typeof arrayMember;
+
 interface TypeObject {
   readonly type: JsonTypeStr;
-  readonly name: string;
+  readonly name: string | ArrayMember;
+  readonly parent: null | ArrayObject | ObjectObject;
+  readonly path: string;
 }
 
 interface StringObject extends TypeObject {
@@ -89,10 +95,14 @@ function isObject(value: unknown): value is JsonObject {
   return Object.prototype.toString.call(value) === '[object Object]';
 }
 
+function quoteName(name: string | ArrayMember) {
+  return typeof name === 'string' ? `'${name}'` : '*';
+}
+
 function getObjectFromParent(
-  parent: null | PrimitiveObject | ArrayObject | ObjectObject,
+  parent: null | ArrayObject | ObjectObject,
   typeName: JsonTypeStr,
-  name: string,
+  name: string | ArrayMember,
 ) {
   if (parent === null) {
     return null;
@@ -108,6 +118,9 @@ function getObjectFromParent(
   }
 
   if (parent.type === 'object') {
+    if (typeof name !== 'string') {
+      throw new Error('object key must be string');
+    }
     return parent.keys[name].values[typeName]
       ? (parent.keys[name].values[typeName] as ObjectObject)
       : null;
@@ -119,42 +132,81 @@ function getObjectFromParent(
 function inspectPrimitive(
   value: JsonPrimitive,
   parent: null | ArrayObject | ObjectObject,
-  name: string,
+  name: string | ArrayMember,
+  path: string,
 ) {
   if (isNull(value)) {
-    return (
-      getObjectFromParent(parent, 'null', name) ||
-      ({ type: 'null', name } as NullObject)
-    );
+    const parentNullObj = getObjectFromParent(
+      parent,
+      'null',
+      name,
+    ) as null | NullObject;
+    const newNullObj: NullObject = {
+      type: 'null',
+      name,
+      parent,
+      path: parent === null ? path : `${path}[${quoteName(name)}]{null}`,
+    } as const;
+
+    return parentNullObj === null ? newNullObj : parentNullObj;
   }
 
   if (isString(value)) {
-    const stringObject: StringObject = (getObjectFromParent(
+    const parentStringObj = getObjectFromParent(
       parent,
       'string',
       name,
-    ) as StringObject) || { type: 'string', name, values: new Set() };
+    ) as null | StringObject;
+    const newStringObj: StringObject = {
+      type: 'string',
+      name,
+      parent,
+      path: parent === null ? path : `${path}[${quoteName(name)}]{string}`,
+      values: new Set(),
+    };
+    const stringObject =
+      parentStringObj === null ? newStringObj : parentStringObj;
     stringObject.values.add(value);
+
     return stringObject;
   }
 
   if (isNumber(value)) {
-    const numberObject: NumberObject = (getObjectFromParent(
+    const parentnumberObj = getObjectFromParent(
       parent,
       'number',
       name,
-    ) as NumberObject) || { type: 'number', name, values: new Set() };
+    ) as null | NumberObject;
+    const newNumberObj: NumberObject = {
+      type: 'number',
+      name,
+      parent,
+      path: parent === null ? path : `${path}[${quoteName(name)}]{number}`,
+      values: new Set(),
+    };
+    const numberObject =
+      parentnumberObj === null ? newNumberObj : parentnumberObj;
     numberObject.values.add(value);
+
     return numberObject;
   }
 
   if (isBoolean(value)) {
-    const booleanObject: BooleanObject = (getObjectFromParent(
+    const parentBoolObj = getObjectFromParent(
       parent,
       'boolean',
       name,
-    ) as BooleanObject) || { type: 'boolean', name, values: new Set() };
+    ) as null | BooleanObject;
+    const newBoolObj: BooleanObject = {
+      type: 'boolean',
+      name,
+      parent,
+      path: parent === null ? path : `${path}[${quoteName(name)}]{boolean}`,
+      values: new Set(),
+    };
+    const booleanObject = parentBoolObj === null ? newBoolObj : parentBoolObj;
     booleanObject.values.add(value);
+
     return booleanObject;
   }
 
@@ -164,71 +216,98 @@ function inspectPrimitive(
 function inspectArray(
   value: JsonArray,
   parent: null | ArrayObject | ObjectObject,
-  name: string,
+  name: string | ArrayMember,
+  path: string,
 ) {
-  const typeObject =
-    (getObjectFromParent(parent, 'array', name) as null | ArrayObject) ||
-    ({ type: 'array', name, values: {} } as ArrayObject);
+  const parentArrObj = getObjectFromParent(
+    parent,
+    'array',
+    name,
+  ) as null | ArrayObject;
+  const newArrObj: ArrayObject = {
+    type: 'array',
+    name,
+    parent,
+    path: parent === null ? path : `${path}[${quoteName(name)}]{array}`,
+    values: {},
+  };
+  const arrayObject = parentArrObj === null ? newArrObj : parentArrObj;
 
   value.forEach(v => {
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    const childObject = inspect(v, typeObject, name);
+    const childObject = inspect(v, arrayObject, arrayMember, arrayObject.path);
     if (!childObject) {
       throw new Error();
     }
     if (childObject.type === 'string') {
-      typeObject.values.string = childObject;
+      arrayObject.values.string = childObject;
     } else if (childObject.type === 'null') {
-      typeObject.values.null = childObject;
+      arrayObject.values.null = childObject;
     } else if (childObject.type === 'number') {
-      typeObject.values.number = childObject;
+      arrayObject.values.number = childObject;
     } else if (childObject.type === 'boolean') {
-      typeObject.values.boolean = childObject;
+      arrayObject.values.boolean = childObject;
     } else if (childObject.type === 'array') {
-      typeObject.values.array = childObject;
+      arrayObject.values.array = childObject;
     } else if (childObject.type === 'object') {
-      typeObject.values.object = childObject;
+      arrayObject.values.object = childObject;
     }
   });
 
-  return typeObject;
+  return arrayObject;
 }
 
 function inspectObject(
   value: JsonObject,
   parent: null | ArrayObject | ObjectObject,
-  name: string,
+  name: string | ArrayMember,
+  path: string,
 ) {
-  const typeObject =
-    (getObjectFromParent(parent, 'object', name) as null | ObjectObject) ||
-    ({ type: 'object', name, keys: {} } as ObjectObject);
+  const parentObjObj = getObjectFromParent(
+    parent,
+    'object',
+    name,
+  ) as null | ObjectObject;
+  const newObjObj: ObjectObject = {
+    type: 'object',
+    name,
+    parent,
+    path: parent === null ? path : `${path}[${quoteName(name)}]{object}`,
+    keys: {},
+  };
+  const objectObject = parentObjObj === null ? newObjObj : parentObjObj;
 
   Object.entries(value).forEach(([childKey, childValue]) => {
-    if (!Object.prototype.hasOwnProperty.call(typeObject.keys, childKey)) {
-      typeObject.keys[childKey] = { values: {} };
+    if (!Object.prototype.hasOwnProperty.call(objectObject.keys, childKey)) {
+      objectObject.keys[childKey] = { values: {} };
     }
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    const childObject = inspect(childValue, typeObject, childKey);
+    const childObject = inspect(
+      childValue,
+      objectObject,
+      childKey,
+      objectObject.path,
+    );
     if (!childObject) {
       throw new Error();
     }
 
     if (childObject.type === 'string') {
-      typeObject.keys[childKey].values.string = childObject;
+      objectObject.keys[childKey].values.string = childObject;
     } else if (childObject.type === 'null') {
-      typeObject.keys[childKey].values.null = childObject;
+      objectObject.keys[childKey].values.null = childObject;
     } else if (childObject.type === 'number') {
-      typeObject.keys[childKey].values.number = childObject;
+      objectObject.keys[childKey].values.number = childObject;
     } else if (childObject.type === 'boolean') {
-      typeObject.keys[childKey].values.boolean = childObject;
+      objectObject.keys[childKey].values.boolean = childObject;
     } else if (childObject.type === 'array') {
-      typeObject.keys[childKey].values.array = childObject;
+      objectObject.keys[childKey].values.array = childObject;
     } else if (childObject.type === 'object') {
-      typeObject.keys[childKey].values.object = childObject;
+      objectObject.keys[childKey].values.object = childObject;
     }
   });
 
-  return typeObject;
+  return objectObject;
 }
 
 function markOptional(
@@ -277,15 +356,16 @@ function markOptional(
 function inspect(
   thing: unknown,
   parent: null | ArrayObject | ObjectObject,
-  name: string,
+  name: string | ArrayMember,
+  path: string,
 ): ArrayObject | ObjectObject | PrimitiveObject {
   let inspectedObject: PrimitiveObject | ArrayObject | ObjectObject;
   if (isPrimitive(thing)) {
-    inspectedObject = inspectPrimitive(thing, parent, name);
+    inspectedObject = inspectPrimitive(thing, parent, name, path);
   } else if (isArray(thing)) {
-    inspectedObject = inspectArray(thing, parent, name);
+    inspectedObject = inspectArray(thing, parent, name, path);
   } else if (isObject(thing)) {
-    inspectedObject = inspectObject(thing, parent, name);
+    inspectedObject = inspectObject(thing, parent, name, path);
   } else {
     throw new Error(
       `unexpected type "${typeof thing}" ("${Object.prototype.toString.call(
@@ -301,7 +381,11 @@ function inspect(
   return inspectedObject;
 }
 
-export default inspect;
+function analyze(thing: unknown) {
+  return inspect(thing, null, 'root', '$');
+}
+
+export default analyze;
 export {
   NullObject,
   BooleanObject,
@@ -312,4 +396,5 @@ export {
   ObjectObject,
   ValuesByType,
   JsonTypeStr,
+  ArrayMember,
 };
