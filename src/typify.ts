@@ -20,6 +20,7 @@ const invalidIdentifiers = new Set<string>([
   'BigInt64Array',
   'BigUint64Array',
   'Boolean',
+  'Coordinates',
   'DataView',
   'Date',
   'Error',
