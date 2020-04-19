@@ -334,6 +334,17 @@ function typifyArray({ thing, nodes, ids, config }: TypifyArrayArgs) {
   return { count: 1, value: identifier };
 }
 
+function formatKeyname(keyname: string){
+  const obj: any = {};
+  Object.defineProperty(obj, keyname, { value: 1, enumerable: true });
+  try {
+    eval(`obj.${keyname}`);
+  } catch(err) {
+    return `"${keyname}"`;
+  }
+  return keyname;
+}
+
 function typifyObject({ thing, nodes, ids, config }: TypifyObjecArgs) {
   const forceType =
     (config.byPath[thing.path] || {}).forceType === false ? false : true;
@@ -346,8 +357,9 @@ function typifyObject({ thing, nodes, ids, config }: TypifyObjecArgs) {
         ids,
         config,
       });
-
-      return `${keyname}${thing.keys[keyname].optional ? '?' : ''}: ${
+      
+      const formattedKey = formatKeyname(keyname);
+      return `${formattedKey}${thing.keys[keyname].optional ? '?' : ''}: ${
         values.value
       };`;
     })
