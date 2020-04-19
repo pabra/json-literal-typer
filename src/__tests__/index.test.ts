@@ -52,6 +52,78 @@ const testData = [
     tsOut: 'interface Root {\n  a: 1;\n}',
   },
   {
+    name: 'object with spaces in key',
+    in: { "With some spaces": 1 },
+    jsonOut: {
+      type: 'object',
+      path: '$',
+      keys: {
+        "With some spaces": {
+          values: [{ type: 'number', path: `$['With some spaces']{number}`, values: [1] }],
+        },
+      },
+    },
+    tsOut: 'interface Root {\n  "With some spaces": 1;\n}',
+  },
+  {
+    name: 'object starting with number starting key',
+    in: { "2numberStart": 1 },
+    jsonOut: {
+      type: 'object',
+      path: '$',
+      keys: {
+        "2numberStart": {
+          values: [{ type: 'number', path: `$['2numberStart']{number}`, values: [1]}],
+        },
+      },
+    },
+    tsOut: 'interface Root {\n  "2numberStart": 1;\n}',
+  },
+  {
+    name: 'object with unusual characters in key',
+    in: { "*~@#$%^&*()_+=><?/": 1 },
+    jsonOut: {
+      type: 'object',
+      path: '$',
+      keys: {
+        "*~@#$%^&*()_+=><?/": {
+          values: [{ type: 'number', path: `$['*~@#$%^&*()_+=><?/']{number}`, values: [1]}],
+        },
+      },
+    },
+    tsOut: 'interface Root {\n  "*~@#$%^&*()_+=><?/": 1;\n}',
+  },
+  {
+    name: 'object with difficult to handle but valid characters in keys',
+    in: { "\\\"": 1 },
+    jsonOut: {
+      type: 'object',
+      path: '$',
+      keys: {
+        "\\\"": {
+          // eslint-disable-next-line no-useless-escape
+          values: [{ type: 'number', path: `$['\\\"']{number}`, values: [1]}],
+        },
+      },
+    },
+    // eslint-disable-next-line no-useless-escape
+    tsOut: 'interface Root {\n  "\\\"": 1;\n}',
+  },
+  {
+    name: 'object with emojis in keys',
+    in: { "🥰👍": 1 },
+    jsonOut: {
+      type: 'object',
+      path: '$',
+      keys: {
+        "🥰👍": {
+          values: [{ type: 'number', path: `$['🥰👍']{number}`, values: [1]}],
+        },
+      },
+    },
+    tsOut: 'interface Root {\n  "🥰👍": 1;\n}',
+  },
+  {
     name: 'object with keys of different and optional types',
     in: {
       data: [
