@@ -27,6 +27,9 @@
     "type": "git",
     "url": "git+https://github.com/pabra/json-literal-typer.git"
   },
+  "contributors": [
+    "Michael Scott-Nelson <mscottnelson@gmail.com> (https://github.com/mscottnelson)"
+  ],
   "bugs": {
     "url": "https://github.com/pabra/json-literal-typer/issues"
   },
