@@ -80,6 +80,12 @@ function uniqueIdentifier(
     name = 'list';
   }
 
+  name = name.replace(/\W+/gi, 'X');
+
+  if(/^\d/.test(name)){
+    name = `N${name}`
+  }
+
   const localInvalidIdentifiers = new Set(invalidIdentifiers);
   if (thing.parent !== null) {
     localInvalidIdentifiers.add('Root');
@@ -426,11 +432,8 @@ const forcedConfig: Config = { byPath: { $: { forceType: true } } };
 
 function typify(
   result: PrimitiveObject | ArrayObject | ObjectObject,
-  conf?: Config,
+  conf: Config = { byPath: {} },
 ) {
-  if (!conf) {
-    conf = { byPath: {} };
-  }
   const nodes: Nodes = { byPath: {}, byOrder: [] };
   const identifiers = new Set<string>();
   const config: Config = { ...baseConfig, ...conf, ...forcedConfig } as const;
