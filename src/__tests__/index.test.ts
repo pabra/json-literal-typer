@@ -1,4 +1,13 @@
 import analyze, { jsonify, typify } from '../';
+import * as ts from 'typescript';
+import { writeFile, PathLike, exists, mkdir } from 'fs';
+import rimraf from 'rimraf';
+import { promisify, inspect } from 'util';
+import { normalize } from 'path';
+const existsP = promisify(exists);
+const mkdirP = promisify(mkdir);
+const rimrafP = promisify(rimraf);
+const writeFileP = promisify(writeFile);
 
 const testData = [
   {
@@ -32,7 +41,7 @@ const testData = [
     tsOut: 'interface Root {\n  \n}',
   },
   {
-    name: 'plain object',
+    name: 'plain array',
     in: [],
     jsonOut: { path: '$', type: 'array', values: [] },
     tsOut: 'type Root = never[];',
@@ -53,13 +62,19 @@ const testData = [
   },
   {
     name: 'object with spaces in key',
-    in: { "With some spaces": 1 },
+    in: { 'With some spaces': 1 },
     jsonOut: {
       type: 'object',
       path: '$',
       keys: {
-        "With some spaces": {
-          values: [{ type: 'number', path: `$['With some spaces']{number}`, values: [1] }],
+        'With some spaces': {
+          values: [
+            {
+              type: 'number',
+              path: `$['With some spaces']{number}`,
+              values: [1],
+            },
+          ],
         },
       },
     },
@@ -67,57 +82,110 @@ const testData = [
   },
   {
     name: 'object starting with number starting key',
-    in: { "2numberStart": 1 },
+    in: { '2numberStart': 1 },
     jsonOut: {
       type: 'object',
       path: '$',
       keys: {
-        "2numberStart": {
-          values: [{ type: 'number', path: `$['2numberStart']{number}`, values: [1]}],
+        '2numberStart': {
+          values: [
+            { type: 'number', path: `$['2numberStart']{number}`, values: [1] },
+          ],
         },
       },
     },
     tsOut: 'interface Root {\n  "2numberStart": 1;\n}',
   },
   {
-    name: 'object with unusual characters in key',
-    in: { "*~@#$%^&*()_+=><?/": 1 },
+    name:
+      'objects with non-word characters in keys replace chars with "X" in TypeScript interfaces',
+    in: {
+      data: {
+        'item1_*': { a: 1 },
+        'item2_*': { b: 2 },
+      },
+    },
     jsonOut: {
       type: 'object',
       path: '$',
       keys: {
-        "*~@#$%^&*()_+=><?/": {
-          values: [{ type: 'number', path: `$['*~@#$%^&*()_+=><?/']{number}`, values: [1]}],
+        data: {
+          values: [
+            {
+              type: 'object',
+              path: "$['data']{object}",
+              keys: {
+                'item1_*': {
+                  values: [
+                    {
+                      type: 'object',
+                      path: "$['data']{object}['item1_*']{object}",
+                      keys: {
+                        a: {
+                          values: [
+                            {
+                              type: 'number',
+                              path:
+                                "$['data']{object}['item1_*']{object}['a']{number}",
+                              values: [1],
+                            },
+                          ],
+                        },
+                      },
+                    },
+                  ],
+                },
+                'item2_*': {
+                  values: [
+                    {
+                      type: 'object',
+                      path: "$['data']{object}['item2_*']{object}",
+                      keys: {
+                        b: {
+                          values: [
+                            {
+                              type: 'number',
+                              path:
+                                "$['data']{object}['item2_*']{object}['b']{number}",
+                              values: [2],
+                            },
+                          ],
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          ],
         },
       },
     },
-    tsOut: 'interface Root {\n  "*~@#$%^&*()_+=><?/": 1;\n}',
-  },
-  {
-    name: 'object with difficult to handle but valid characters in keys',
-    in: { "\\\"": 1 },
-    jsonOut: {
-      type: 'object',
-      path: '$',
-      keys: {
-        "\\\"": {
-          // eslint-disable-next-line no-useless-escape
-          values: [{ type: 'number', path: `$['\\\"']{number}`, values: [1]}],
-        },
-      },
-    },
-    // eslint-disable-next-line no-useless-escape
-    tsOut: 'interface Root {\n  "\\\"": 1;\n}',
+    tsOut: [
+      'interface Item1_X {',
+      '  a: 1;',
+      '}',
+      'interface Item2_X {',
+      '  b: 2;',
+      '}',
+      'interface Data {',
+      '  "item1_*": Item1_X;',
+      '  "item2_*": Item2_X;',
+      '}',
+      'interface Root {',
+      '  data: Data;',
+      '}',
+    ].join('\n'),
   },
   {
     name: 'object with emojis in keys',
-    in: { "🥰👍": 1 },
+    in: { '🥰👍': 1 },
     jsonOut: {
       type: 'object',
       path: '$',
       keys: {
-        "🥰👍": {
-          values: [{ type: 'number', path: `$['🥰👍']{number}`, values: [1]}],
+        '🥰👍': {
+          values: [{ type: 'number', path: `$['🥰👍']{number}`, values: [1] }],
         },
       },
     },
@@ -484,14 +552,112 @@ const testData = [
   },
 ];
 
+async function compile(
+  tsString: string,
+  label: string,
+  options: ts.CompilerOptions,
+) {
+  const fileName: PathLike = normalize(`${options.outDir}/temp-${label}.ts`);
+
+  await writeFileP(fileName, tsString);
+
+  const program = ts.createProgram([fileName], options);
+  const emitResult = program.emit();
+
+  const allDiagnostics = ts
+    .getPreEmitDiagnostics(program)
+    .concat(emitResult.diagnostics);
+
+  allDiagnostics.forEach(diagnostic => {
+    if (diagnostic.file) {
+      const { line, character } = diagnostic.file.getLineAndCharacterOfPosition(
+        diagnostic.start!,
+      );
+      const message = ts.flattenDiagnosticMessageText(
+        diagnostic.messageText,
+        '\n',
+      );
+      console.log(
+        `${diagnostic.file.fileName} (${line + 1},${character +
+          1}): ${message}`,
+      );
+    } else {
+      console.log(
+        ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'),
+      );
+    }
+  });
+
+  return !emitResult.emitSkipped;
+}
+
+const tsOptions = {
+  target: ts.ScriptTarget.ES5,
+  module: ts.ModuleKind.CommonJS,
+  declaration: true,
+  outDir: './src/__tests__/out',
+  exclude: ['node_modules', 'lib', '**/__tests__/*', 'src/__tests__'],
+  strict: true,
+  esModuleInterop: true,
+  forceConsistentCasingInFileNames: true,
+  noEmitOnError: true,
+  removeComments: true,
+  jsx: ts.JsxEmit.Preserve,
+  noUnusedParameters: true,
+  noUnusedLocals: true,
+  noImplicitReturns: true,
+};
+
+beforeAll(async () => {
+  const outTs = normalize(tsOptions.outDir);
+  if (await existsP(outTs)) {
+    await rimrafP(outTs);
+  }
+  mkdirP(outTs);
+});
+
 testData.forEach(data => {
   const analyzed = analyze(data.in);
+  const jsonified = jsonify(analyzed);
+  const typified = typify(analyzed, data.config);
+
   it('should get expected json output for: ' + data.name, () => {
-    const jsonified = jsonify(analyzed);
     expect(jsonified).toEqual(data.jsonOut);
   });
-  it('should get expected typescript output for: ' + data.name, () => {
-    const typified = typify(analyzed, data.config);
+
+  it('should get expected typescript for: ' + data.name, () => {
     expect(typified).toEqual(data.tsOut);
+  });
+
+  it('should produce compileable typescript for: ' + data.name, async () => {
+    const formatOpts = {
+      colors: false,
+      maxArrayLength: Infinity,
+      breakLength: 80,
+      depth: Infinity,
+    };
+    let str: string;
+    switch (jsonified.type) {
+      case 'string':
+        str = `${typified}\nconst i: Root = "${data.in}"`;
+        break;
+      case 'object':
+        str = `${typified}\nconst i: Root = ${inspect(data.in, formatOpts)}`;
+        break;
+      case 'array':
+        str = [...jsonified.values].length
+          ? `${typified}\nconst i: Root = ${inspect(data.in, formatOpts)}`
+          : `${typified}`;
+        break;
+      default:
+        str = `${typified}\nconst i: Root = ${data.in}`;
+        break;
+    }
+    const compiled = await compile(
+      str,
+      data.name.replace(/\s/gi, '_'),
+      tsOptions,
+    );
+    expect(compiled).toBeTruthy();
   });
 });

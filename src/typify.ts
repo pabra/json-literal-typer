@@ -82,8 +82,8 @@ function uniqueIdentifier(
 
   name = name.replace(/\W+/gi, 'X');
 
-  if(/^\d/.test(name)){
-    name = `N${name}`
+  if (/^\d/.test(name)) {
+    name = `N${name}`;
   }
 
   const localInvalidIdentifiers = new Set(invalidIdentifiers);
@@ -340,12 +340,12 @@ function typifyArray({ thing, nodes, ids, config }: TypifyArrayArgs) {
   return { count: 1, value: identifier };
 }
 
-function formatKeyname(keyname: string){
+function formatKeyname(keyname: string) {
   const obj: any = {};
   Object.defineProperty(obj, keyname, { value: 1, enumerable: true });
   try {
     eval(`obj.${keyname}`);
-  } catch(err) {
+  } catch (err) {
     return `"${keyname}"`;
   }
   return keyname;
@@ -363,7 +363,7 @@ function typifyObject({ thing, nodes, ids, config }: TypifyObjecArgs) {
         ids,
         config,
       });
-      
+
       const formattedKey = formatKeyname(keyname);
       return `${formattedKey}${thing.keys[keyname].optional ? '?' : ''}: ${
         values.value
