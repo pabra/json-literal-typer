@@ -70,6 +70,7 @@ const invalidIdentifiers = new Set<string>([
 function uniqueIdentifier(
   thing: PrimitiveObject | ArrayObject | ObjectObject,
   identifiers: Set<string>,
+  typePrefix?: string,
 ) {
   let name: string;
   if (typeof thing.name === 'string') {
@@ -78,6 +79,10 @@ function uniqueIdentifier(
     name = thing.parent.name;
   } else {
     name = 'list';
+  }
+
+  if (typePrefix) {
+    name = typePrefix + name;
   }
 
   name = name.replace(/\W+/gi, 'X');
@@ -210,7 +215,7 @@ function typifyNull({ thing, nodes, ids, config }: TypifyNullArgs) {
     return { count: 1, value };
   }
 
-  const identifier = uniqueIdentifier(thing, ids);
+  const identifier = uniqueIdentifier(thing, ids, config.typePrefix);
   const stringified = `type ${identifier} = ${value};`;
   const node: Node = {
     name: thing.name,
@@ -238,7 +243,7 @@ function typifyString({ thing, nodes, ids, config }: TypifyStringArgs) {
     return { count: thing.values.size, value };
   }
 
-  const identifier = uniqueIdentifier(thing, ids);
+  const identifier = uniqueIdentifier(thing, ids, config.typePrefix);
   const stringified = `type ${identifier} = ${value};`;
   const node: Node = {
     name: thing.name,
@@ -265,7 +270,7 @@ function typifyNumber({ thing, nodes, ids, config }: TypifyNumberArgs) {
     return { count: thing.values.size, value };
   }
 
-  const identifier = uniqueIdentifier(thing, ids);
+  const identifier = uniqueIdentifier(thing, ids, config.typePrefix);
   const stringified = `type ${identifier} = ${value};`;
   const node: Node = {
     name: thing.name,
@@ -292,7 +297,7 @@ function typifyBoolean({ thing, nodes, ids, config }: TypifyBooleanArgs) {
     return { count: thing.values.size, value };
   }
 
-  const identifier = uniqueIdentifier(thing, ids);
+  const identifier = uniqueIdentifier(thing, ids, config.typePrefix);
   const stringified = `type ${identifier} = ${value};`;
   const node: Node = {
     name: thing.name,
@@ -326,7 +331,7 @@ function typifyArray({ thing, nodes, ids, config }: TypifyArrayArgs) {
     return { count: 1, value };
   }
 
-  const identifier = uniqueIdentifier(thing, ids);
+  const identifier = uniqueIdentifier(thing, ids, config.typePrefix);
   const stringified = `type ${identifier} = ${value};`;
   const node: Node = {
     name: thing.name,
@@ -377,7 +382,7 @@ function typifyObject({ thing, nodes, ids, config }: TypifyObjecArgs) {
     return { count: 1, value };
   }
 
-  const identifier = uniqueIdentifier(thing, ids);
+  const identifier = uniqueIdentifier(thing, ids, config.typePrefix);
   const stringified = `interface ${identifier} ${value}`;
   const node: Node = {
     name: thing.name,
@@ -423,6 +428,7 @@ function typifyThing({
 interface Config {
   maxLiteralPerType?: number;
   byPath: Record<string, { forceType?: boolean; baseType?: boolean }>;
+  typePrefix?: string;
 }
 const baseConfig: Config = {
   maxLiteralPerType: 10,

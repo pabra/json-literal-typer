@@ -1,5 +1,5 @@
 import analyze, { jsonify, typify } from '../';
-import * as ts from 'typescript';
+import ts from 'typescript';
 import { writeFile, PathLike, exists, mkdir } from 'fs';
 import rimraf from 'rimraf';
 import { promisify, inspect } from 'util';
