@@ -27,6 +27,9 @@
     "type": "git",
     "url": "git+https://github.com/pabra/json-literal-typer.git"
   },
+  "contributors": [
+    "Michael Scott-Nelson <mscottnelson@gmail.com> (https://github.com/mscottnelson)"
+  ],
   "bugs": {
     "url": "https://github.com/pabra/json-literal-typer/issues"
   },
@@ -35,6 +38,8 @@
   "license": "MIT",
   "devDependencies": {
     "@types/jest": "^24.0.18",
+    "@types/node": "^13.13.0",
+    "@types/rimraf": "^3.0.0",
     "@typescript-eslint/eslint-plugin": "^2.3.3",
     "@typescript-eslint/parser": "^2.3.3",
     "eslint": "^6.5.1",

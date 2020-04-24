@@ -3,7 +3,7 @@ import { PrimitiveObject, ArrayObject, ObjectObject } from './analyze';
 interface ArrayJson {
   type: 'array';
   path: string;
-  values: {};
+  values: Iterable<{}>;
 }
 
 interface ObjectJson {

@@ -70,6 +70,7 @@ const invalidIdentifiers = new Set<string>([
 function uniqueIdentifier(
   thing: PrimitiveObject | ArrayObject | ObjectObject,
   identifiers: Set<string>,
+  typePrefix?: string,
 ) {
   let name: string;
   if (typeof thing.name === 'string') {
@@ -78,6 +79,16 @@ function uniqueIdentifier(
     name = thing.parent.name;
   } else {
     name = 'list';
+  }
+
+  if (typePrefix) {
+    name = typePrefix + name;
+  }
+
+  name = name.replace(/\W+/gi, 'X');
+
+  if (/^\d/.test(name)) {
+    name = `N${name}`;
   }
 
   const localInvalidIdentifiers = new Set(invalidIdentifiers);
@@ -204,7 +215,7 @@ function typifyNull({ thing, nodes, ids, config }: TypifyNullArgs) {
     return { count: 1, value };
   }
 
-  const identifier = uniqueIdentifier(thing, ids);
+  const identifier = uniqueIdentifier(thing, ids, config.typePrefix);
   const stringified = `type ${identifier} = ${value};`;
   const node: Node = {
     name: thing.name,
@@ -232,7 +243,7 @@ function typifyString({ thing, nodes, ids, config }: TypifyStringArgs) {
     return { count: thing.values.size, value };
   }
 
-  const identifier = uniqueIdentifier(thing, ids);
+  const identifier = uniqueIdentifier(thing, ids, config.typePrefix);
   const stringified = `type ${identifier} = ${value};`;
   const node: Node = {
     name: thing.name,
@@ -259,7 +270,7 @@ function typifyNumber({ thing, nodes, ids, config }: TypifyNumberArgs) {
     return { count: thing.values.size, value };
   }
 
-  const identifier = uniqueIdentifier(thing, ids);
+  const identifier = uniqueIdentifier(thing, ids, config.typePrefix);
   const stringified = `type ${identifier} = ${value};`;
   const node: Node = {
     name: thing.name,
@@ -286,7 +297,7 @@ function typifyBoolean({ thing, nodes, ids, config }: TypifyBooleanArgs) {
     return { count: thing.values.size, value };
   }
 
-  const identifier = uniqueIdentifier(thing, ids);
+  const identifier = uniqueIdentifier(thing, ids, config.typePrefix);
   const stringified = `type ${identifier} = ${value};`;
   const node: Node = {
     name: thing.name,
@@ -320,7 +331,7 @@ function typifyArray({ thing, nodes, ids, config }: TypifyArrayArgs) {
     return { count: 1, value };
   }
 
-  const identifier = uniqueIdentifier(thing, ids);
+  const identifier = uniqueIdentifier(thing, ids, config.typePrefix);
   const stringified = `type ${identifier} = ${value};`;
   const node: Node = {
     name: thing.name,
@@ -332,6 +343,17 @@ function typifyArray({ thing, nodes, ids, config }: TypifyArrayArgs) {
   addNode(node, nodes);
 
   return { count: 1, value: identifier };
+}
+
+function formatKeyname(keyname: string) {
+  const obj: any = {};
+  Object.defineProperty(obj, keyname, { value: 1, enumerable: true });
+  try {
+    eval(`obj.${keyname}`);
+  } catch (err) {
+    return `"${keyname}"`;
+  }
+  return keyname;
 }
 
 function typifyObject({ thing, nodes, ids, config }: TypifyObjecArgs) {
@@ -347,7 +369,8 @@ function typifyObject({ thing, nodes, ids, config }: TypifyObjecArgs) {
         config,
       });
 
-      return `${keyname}${thing.keys[keyname].optional ? '?' : ''}: ${
+      const formattedKey = formatKeyname(keyname);
+      return `${formattedKey}${thing.keys[keyname].optional ? '?' : ''}: ${
         values.value
       };`;
     })
@@ -359,7 +382,7 @@ function typifyObject({ thing, nodes, ids, config }: TypifyObjecArgs) {
     return { count: 1, value };
   }
 
-  const identifier = uniqueIdentifier(thing, ids);
+  const identifier = uniqueIdentifier(thing, ids, config.typePrefix);
   const stringified = `interface ${identifier} ${value}`;
   const node: Node = {
     name: thing.name,
@@ -405,6 +428,7 @@ function typifyThing({
 interface Config {
   maxLiteralPerType?: number;
   byPath: Record<string, { forceType?: boolean; baseType?: boolean }>;
+  typePrefix?: string;
 }
 const baseConfig: Config = {
   maxLiteralPerType: 10,
@@ -414,11 +438,8 @@ const forcedConfig: Config = { byPath: { $: { forceType: true } } };
 
 function typify(
   result: PrimitiveObject | ArrayObject | ObjectObject,
-  conf?: Config,
+  conf: Config = { byPath: {} },
 ) {
-  if (!conf) {
-    conf = { byPath: {} };
-  }
   const nodes: Nodes = { byPath: {}, byOrder: [] };
   const identifiers = new Set<string>();
   const config: Config = { ...baseConfig, ...conf, ...forcedConfig } as const;
