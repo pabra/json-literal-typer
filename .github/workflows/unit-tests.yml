@@ -1,0 +1,47 @@
+name: toolkit-unit-tests
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - '**.md'
+  pull_request:
+    paths-ignore:
+      - '**.md'
+
+jobs:
+  build:
+    name: Build
+
+    strategy:
+      matrix:
+        runs-on: ['ubuntu-latest', 'macOS-latest', 'windows-latest']
+      fail-fast: false
+
+    runs-on: ${{ matrix.runs-on }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set Node.js 12.x
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12.x
+
+      - name: npm install
+        run: npm install
+
+      - name: format
+        run: npm run format:check
+        if: matrix.runs-on == 'ubuntu-latest'
+
+      - name: lint
+        run: npm run lint
+        if: matrix.runs-on == 'ubuntu-latest'
+
+      - name: npm test
+        run: npm run test
+
+      - name: build
+        run: npm run build

@@ -13,6 +13,7 @@
     "build": "tsc",
     "lint": "eslint src/ --ext .js --ext .ts --ext .jsx --ext .tsx",
     "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"src/**/*.js\"",
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run lint",
     "test": "jest --config jestconfig.json",
