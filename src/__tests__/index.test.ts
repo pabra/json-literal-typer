@@ -571,7 +571,7 @@ async function compile(
   allDiagnostics.forEach(diagnostic => {
     if (diagnostic.file) {
       const { line, character } = diagnostic.file.getLineAndCharacterOfPosition(
-        diagnostic.start!,
+        diagnostic.start!, // eslint-disable-line @typescript-eslint/no-non-null-assertion
       );
       const message = ts.flattenDiagnosticMessageText(
         diagnostic.messageText,

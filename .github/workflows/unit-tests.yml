@@ -13,12 +13,7 @@ jobs:
   build:
     name: Build
 
-    strategy:
-      matrix:
-        runs-on: ['ubuntu-latest', 'macOS-latest', 'windows-latest']
-      fail-fast: false
-
-    runs-on: ${{ matrix.runs-on }}
+    runs-on: 'ubuntu-latest'
 
     steps:
       - name: Checkout
@@ -34,11 +29,9 @@ jobs:
 
       - name: format
         run: npm run format:check
-        if: matrix.runs-on == 'ubuntu-latest'
 
       - name: lint
         run: npm run lint
-        if: matrix.runs-on == 'ubuntu-latest'
 
       - name: npm test
         run: npm run test
