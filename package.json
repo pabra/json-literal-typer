@@ -8,11 +8,11 @@
     "lib/**/*"
   ],
   "scripts": {
-    "clean:coverage": "rimraf coverage/*",
+    "clean:test": "rimraf src/__tests__/out/* coverage/*",
     "clean:build": "rimraf lib/*",
-    "pretest": "npm rum clean:coverage",
-    "test": "jest --config jestconfig.json",
-    "pretest:coverage": "npm rum clean:coverage",
+    "pretest": "npm run clean:test",
+    "test": "jest",
+    "pretest:coverage": "npm run clean:test",
     "test:coverage": "jest --coverage",
     "test:debug": "node --inspect node_modules/.bin/jest --runInBand",
     "prebuild": "npm run clean:build",
