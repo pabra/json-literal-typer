@@ -18,8 +18,8 @@
     "prebuild": "npm run clean:build",
     "build": "tsc",
     "lint": "eslint \"src/**/*.{js,ts,jsx,tsx}\"",
-    "format": "prettier --write \"src/**/*.{ja,ts,jsx,tsx,json,html,css,scss,yml,yaml}\"",
-    "format:check": "prettier --check \"src/**/*.{ja,ts,jsx,tsx,json,html,css,scss,yml,yaml}\"",
+    "format": "prettier --write \"src/**/*.{js,ts,jsx,tsx,json,html,css,scss,yml,yaml}\"",
+    "format:check": "prettier --check \"src/**/*.{js,ts,jsx,tsx,json,html,css,scss,yml,yaml}\"",
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run lint"
   },
