@@ -114,10 +114,10 @@ function getObjectFromParent(
 
   if (parent.type === 'array') {
     return parent.values[typeName]
-      ? (parent.values[typeName] as (
+      ? (parent.values[typeName] as
           | PrimitiveObject
           | ArrayObject
-          | ObjectObject))
+          | ObjectObject)
       : null;
   }
 
@@ -345,11 +345,15 @@ function markOptional(
 
     Object.entries(thing).forEach(([childKey, childThing]) => {
       if (isArray(childThing)) {
-        markOptional(childThing, inspectedObject.keys[childKey].values
-          .array as ArrayObject);
+        markOptional(
+          childThing,
+          inspectedObject.keys[childKey].values.array as ArrayObject,
+        );
       } else if (isObject(childThing)) {
-        markOptional(childThing, inspectedObject.keys[childKey].values
-          .object as ObjectObject);
+        markOptional(
+          childThing,
+          inspectedObject.keys[childKey].values.object as ObjectObject,
+        );
       }
     });
   }

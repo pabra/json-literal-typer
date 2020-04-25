@@ -262,9 +262,7 @@ function typifyNumber({ thing, nodes, ids, config }: TypifyNumberArgs) {
   const baseType = (config.byPath[thing.path] || {}).baseType === true;
   const value = baseType
     ? thing.type
-    : Array.from(thing.values)
-        .sort()
-        .join(' | ');
+    : Array.from(thing.values).sort().join(' | ');
 
   if (!forceType) {
     return { count: thing.values.size, value };
@@ -289,9 +287,7 @@ function typifyBoolean({ thing, nodes, ids, config }: TypifyBooleanArgs) {
   const baseType = (config.byPath[thing.path] || {}).baseType === true;
   const value = baseType
     ? thing.type
-    : Array.from(thing.values)
-        .sort()
-        .join(' | ');
+    : Array.from(thing.values).sort().join(' | ');
 
   if (!forceType) {
     return { count: thing.values.size, value };
