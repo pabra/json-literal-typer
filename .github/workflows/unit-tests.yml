@@ -16,25 +16,13 @@ jobs:
     runs-on: 'ubuntu-latest'
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Set Node.js 12.x
-        uses: actions/setup-node@v1
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
         with:
-          node-version: 12.x
+          node-version: 12
 
-      - name: npm install
-        run: npm install
-
-      - name: format
-        run: npm run format:check
-
-      - name: lint
-        run: npm run lint
-
-      - name: npm test
-        run: npm run test
-
-      - name: build
-        run: npm run build
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run test
+      - run: npm run build:check
