@@ -1,9 +1,9 @@
-import analyze, { jsonify, typify } from '../';
-import ts from 'typescript';
-import { writeFile, PathLike, exists, mkdir } from 'fs';
-import rimraf from 'rimraf';
-import { promisify } from 'util';
+import { exists, mkdir, PathLike, writeFile } from 'fs';
 import { normalize } from 'path';
+import rimraf from 'rimraf';
+import ts from 'typescript';
+import { promisify } from 'util';
+import analyze, { jsonify, typify } from '../';
 const existsP = promisify(exists);
 const mkdirP = promisify(mkdir);
 const rimrafP = promisify(rimraf);

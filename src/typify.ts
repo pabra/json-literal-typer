@@ -1,14 +1,14 @@
 import {
-  ValuesByType,
-  PrimitiveObject,
-  NullObject,
-  StringObject,
-  NumberObject,
-  BooleanObject,
-  ArrayObject,
-  ObjectObject,
-  JsonTypeStr,
   ArrayMember,
+  ArrayObject,
+  BooleanObject,
+  JsonTypeStr,
+  NullObject,
+  NumberObject,
+  ObjectObject,
+  PrimitiveObject,
+  StringObject,
+  ValuesByType,
 } from './analyze';
 
 const invalidIdentifiers = new Set<string>([

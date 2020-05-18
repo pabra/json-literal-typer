@@ -1,4 +1,4 @@
-import { PrimitiveObject, ArrayObject, ObjectObject } from './analyze';
+import { ArrayObject, ObjectObject, PrimitiveObject } from './analyze';
 
 interface ArrayJson {
   type: 'array';
