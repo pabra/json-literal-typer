@@ -2,7 +2,7 @@ import analyze, { jsonify, typify } from '../';
 import ts from 'typescript';
 import { writeFile, PathLike, exists, mkdir } from 'fs';
 import rimraf from 'rimraf';
-import { promisify, inspect } from 'util';
+import { promisify } from 'util';
 import { normalize } from 'path';
 const existsP = promisify(exists);
 const mkdirP = promisify(mkdir);
@@ -15,6 +15,26 @@ const testData = [
     in: 'str',
     jsonOut: { path: '$', type: 'string', values: ['str'] },
     tsOut: 'type Root = "str";',
+  },
+  {
+    name: 'plain string with "double quotes"',
+    in: 'str with "double quotes"',
+    jsonOut: {
+      path: '$',
+      type: 'string',
+      values: ['str with "double quotes"'],
+    },
+    tsOut: 'type Root = "str with \\"double quotes\\"";',
+  },
+  {
+    name: 'plain string with escaped backslash',
+    in: 'string with \\ backslash',
+    jsonOut: {
+      path: '$',
+      type: 'string',
+      values: ['string with \\ backslash'],
+    },
+    tsOut: 'type Root = "string with \\\\ backslash";',
   },
   {
     name: 'plain number',
@@ -59,6 +79,48 @@ const testData = [
       },
     },
     tsOut: 'interface Root {\n  a: 1;\n}',
+  },
+  {
+    name: 'simple object with double quotes',
+    in: { 'key with "quotes"': 'value with "quotes"' },
+    jsonOut: {
+      type: 'object',
+      path: '$',
+      keys: {
+        'key with "quotes"': {
+          values: [
+            {
+              type: 'string',
+              path: `$['key with "quotes"']{string}`,
+              values: ['value with "quotes"'],
+            },
+          ],
+        },
+      },
+    },
+    tsOut:
+      'interface Root {\n  "key with \\"quotes\\"": "value with \\"quotes\\"";\n}',
+  },
+  {
+    name: 'simple object with backslash',
+    in: { 'key with \\ backslash': 'value with \\ backslash' },
+    jsonOut: {
+      type: 'object',
+      path: '$',
+      keys: {
+        'key with \\ backslash': {
+          values: [
+            {
+              type: 'string',
+              path: "$['key with \\ backslash']{string}",
+              values: ['value with \\ backslash'],
+            },
+          ],
+        },
+      },
+    },
+    tsOut:
+      'interface Root {\n  "key with \\\\ backslash": "value with \\\\ backslash";\n}',
   },
   {
     name: 'object with spaces in key',
@@ -631,29 +693,7 @@ testData.forEach(data => {
   });
 
   it('should produce compileable typescript for: ' + data.name, async () => {
-    const formatOpts = {
-      colors: false,
-      maxArrayLength: Infinity,
-      breakLength: 80,
-      depth: Infinity,
-    };
-    let str: string;
-    switch (jsonified.type) {
-      case 'string':
-        str = `${typified}\nconst i: Root = "${data.in}"`;
-        break;
-      case 'object':
-        str = `${typified}\nconst i: Root = ${inspect(data.in, formatOpts)}`;
-        break;
-      case 'array':
-        str = [...jsonified.values].length
-          ? `${typified}\nconst i: Root = ${inspect(data.in, formatOpts)}`
-          : `${typified}`;
-        break;
-      default:
-        str = `${typified}\nconst i: Root = ${data.in}`;
-        break;
-    }
+    const str = `${typified}\nconst i: Root = ${JSON.stringify(data.in)}`;
     const compiled = await compile(
       str,
       data.name.replace(/\s/gi, '_'),
