@@ -69,6 +69,10 @@ export interface ObjectObject extends TypeObject {
   };
 }
 
+function assertNever(x: never): never {
+  throw new Error('Unexpected object: ' + x);
+}
+
 function isNull(value: unknown): value is null {
   return value === null;
 }
@@ -119,18 +123,15 @@ function getObjectFromParent(
           | ArrayObject
           | ObjectObject)
       : null;
-  }
-
-  if (parent.type === 'object') {
+  } else {
     if (typeof name !== 'string') {
       throw new Error('object key must be string');
     }
+
     return parent.keys[name].values[typeName]
       ? (parent.keys[name].values[typeName] as ObjectObject)
       : null;
   }
-
-  return null;
 }
 
 function inspectPrimitive(
@@ -152,7 +153,7 @@ function inspectPrimitive(
       path: parent === null ? path : `${path}[${quoteName(name)}]{null}`,
     } as const;
 
-    return parentNullObj === null ? newNullObj : parentNullObj;
+    return parentNullObj ?? newNullObj;
   }
 
   if (isString(value)) {
@@ -168,8 +169,7 @@ function inspectPrimitive(
       path: parent === null ? path : `${path}[${quoteName(name)}]{string}`,
       values: new Set(),
     };
-    const stringObject =
-      parentStringObj === null ? newStringObj : parentStringObj;
+    const stringObject = parentStringObj ?? newStringObj;
     stringObject.values.add(value);
 
     return stringObject;
@@ -188,8 +188,7 @@ function inspectPrimitive(
       path: parent === null ? path : `${path}[${quoteName(name)}]{number}`,
       values: new Set(),
     };
-    const numberObject =
-      parentnumberObj === null ? newNumberObj : parentnumberObj;
+    const numberObject = parentnumberObj ?? newNumberObj;
     numberObject.values.add(value);
 
     return numberObject;
@@ -208,13 +207,13 @@ function inspectPrimitive(
       path: parent === null ? path : `${path}[${quoteName(name)}]{boolean}`,
       values: new Set(),
     };
-    const booleanObject = parentBoolObj === null ? newBoolObj : parentBoolObj;
+    const booleanObject = parentBoolObj ?? newBoolObj;
     booleanObject.values.add(value);
 
     return booleanObject;
   }
 
-  throw new Error('no JSON primitive type');
+  assertNever(value);
 }
 
 function inspectArray(
@@ -240,21 +239,34 @@ function inspectArray(
   value.forEach(v => {
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
     const childObject = inspect(v, arrayObject, arrayMember, arrayObject.path);
-    if (!childObject) {
-      throw new Error();
-    }
-    if (childObject.type === 'string') {
-      arrayObject.values.string = childObject;
-    } else if (childObject.type === 'null') {
-      arrayObject.values.null = childObject;
-    } else if (childObject.type === 'number') {
-      arrayObject.values.number = childObject;
-    } else if (childObject.type === 'boolean') {
-      arrayObject.values.boolean = childObject;
-    } else if (childObject.type === 'array') {
-      arrayObject.values.array = childObject;
-    } else if (childObject.type === 'object') {
-      arrayObject.values.object = childObject;
+
+    switch (childObject.type) {
+      case 'string':
+        arrayObject.values.string = childObject;
+        break;
+
+      case 'null':
+        arrayObject.values.null = childObject;
+        break;
+
+      case 'number':
+        arrayObject.values.number = childObject;
+        break;
+
+      case 'boolean':
+        arrayObject.values.boolean = childObject;
+        break;
+
+      case 'array':
+        arrayObject.values.array = childObject;
+        break;
+
+      case 'object':
+        arrayObject.values.object = childObject;
+        break;
+
+      default:
+        assertNever(childObject);
     }
   });
 
@@ -292,22 +304,34 @@ function inspectObject(
       childKey,
       objectObject.path,
     );
-    if (!childObject) {
-      throw new Error();
-    }
 
-    if (childObject.type === 'string') {
-      objectObject.keys[childKey].values.string = childObject;
-    } else if (childObject.type === 'null') {
-      objectObject.keys[childKey].values.null = childObject;
-    } else if (childObject.type === 'number') {
-      objectObject.keys[childKey].values.number = childObject;
-    } else if (childObject.type === 'boolean') {
-      objectObject.keys[childKey].values.boolean = childObject;
-    } else if (childObject.type === 'array') {
-      objectObject.keys[childKey].values.array = childObject;
-    } else if (childObject.type === 'object') {
-      objectObject.keys[childKey].values.object = childObject;
+    switch (childObject.type) {
+      case 'string':
+        objectObject.keys[childKey].values.string = childObject;
+        break;
+
+      case 'null':
+        objectObject.keys[childKey].values.null = childObject;
+        break;
+
+      case 'number':
+        objectObject.keys[childKey].values.number = childObject;
+        break;
+
+      case 'boolean':
+        objectObject.keys[childKey].values.boolean = childObject;
+        break;
+
+      case 'array':
+        objectObject.keys[childKey].values.array = childObject;
+        break;
+
+      case 'object':
+        objectObject.keys[childKey].values.object = childObject;
+        break;
+
+      default:
+        assertNever(childObject);
     }
   });
 
