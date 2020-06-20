@@ -697,7 +697,7 @@ describe('test typification', () => {
       const str = `${typified}\nconst i: Root = ${JSON.stringify(data.in)}`;
       const compiled = await compile(
         str,
-        data.name.replace(/\s/gi, '_'),
+        data.name.replace(/\s/g, '_').replace(/[^a-zA-Z0-9_-]/g, ''),
         tsOptions,
       );
       expect(compiled).toBeTruthy();
