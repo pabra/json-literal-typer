@@ -261,9 +261,9 @@ const testData = [
         { a: { x: 1 }, c: null },
         { a: { x: '1' }, b: { x: '3' } },
         { a: { x: 1 }, b: false },
-        { a: { x: 1 }, b: ['c', 'B'] },
-        { a: { x: 1 }, b: ['a'] },
-        { a: { x: 1 }, b: ['B', 'c'] },
+        { a: { x: 1 }, b: ['c', 'B', null] },
+        { a: { x: 1 }, b: ['a', null] },
+        { a: { x: 1 }, b: ['B', 'c', [true]] },
       ],
     },
     jsonOut: {
@@ -348,6 +348,24 @@ const testData = [
                                 "$['data']{array}[*]{object}['b']{array}[*]{string}",
                               values: ['c', 'B', 'a'],
                             },
+                            {
+                              path:
+                                "$['data']{array}[*]{object}['b']{array}[*]{null}",
+                              type: 'null',
+                            },
+                            {
+                              path:
+                                "$['data']{array}[*]{object}['b']{array}[*]{array}",
+                              type: 'array',
+                              values: [
+                                {
+                                  path:
+                                    "$['data']{array}[*]{object}['b']{array}[*]{array}[*]{boolean}",
+                                  type: 'boolean',
+                                  values: [true],
+                                },
+                              ],
+                            },
                           ],
                         },
                       ],
@@ -370,7 +388,7 @@ const testData = [
       '}',
       'interface Data {',
       '  a: A;',
-      '  b?: ("B" | "a" | "c")[] | false | B;',
+      '  b?: (true[] | null | "B" | "a" | "c")[] | false | B;',
       '  c?: null;',
       '}',
       'interface Root {',
