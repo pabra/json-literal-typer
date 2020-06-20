@@ -679,26 +679,28 @@ beforeAll(async () => {
   mkdirP(outTs);
 });
 
-testData.forEach(data => {
-  const analyzed = analyze(data.in);
-  const jsonified = jsonify(analyzed);
-  const typified = typify(analyzed, data.config);
+describe('test typification', () => {
+  for (const data of testData) {
+    const analyzed = analyze(data.in);
+    const jsonified = jsonify(analyzed);
+    const typified = typify(analyzed, data.config);
 
-  it('should get expected json output for: ' + data.name, () => {
-    expect(jsonified).toEqual(data.jsonOut);
-  });
+    it('should get expected json output for: ' + data.name, () => {
+      expect(jsonified).toEqual(data.jsonOut);
+    });
 
-  it('should get expected typescript for: ' + data.name, () => {
-    expect(typified).toEqual(data.tsOut);
-  });
+    it('should get expected typescript for: ' + data.name, () => {
+      expect(typified).toEqual(data.tsOut);
+    });
 
-  it('should produce compileable typescript for: ' + data.name, async () => {
-    const str = `${typified}\nconst i: Root = ${JSON.stringify(data.in)}`;
-    const compiled = await compile(
-      str,
-      data.name.replace(/\s/gi, '_'),
-      tsOptions,
-    );
-    expect(compiled).toBeTruthy();
-  });
+    it('should produce compileable typescript for: ' + data.name, async () => {
+      const str = `${typified}\nconst i: Root = ${JSON.stringify(data.in)}`;
+      const compiled = await compile(
+        str,
+        data.name.replace(/\s/gi, '_'),
+        tsOptions,
+      );
+      expect(compiled).toBeTruthy();
+    });
+  }
 });
