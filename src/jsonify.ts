@@ -1,15 +1,29 @@
 import { ArrayObject, ObjectObject, PrimitiveObject } from './analyze';
 
+type SomeJson =
+  | ArrayJson
+  | ObjectJson
+  | NullJson
+  | BooleanJson
+  | NumberJson
+  | StringJson;
+
 interface ArrayJson {
   type: 'array';
   path: string;
-  values: Iterable<{}>;
+  values: SomeJson[];
 }
 
 interface ObjectJson {
   type: 'object';
   path: string;
-  keys: Record<string, {}>;
+  keys: Record<
+    string,
+    {
+      values: SomeJson[];
+      optional?: boolean;
+    }
+  >;
 }
 
 interface NullJson {
@@ -35,7 +49,9 @@ interface StringJson {
   values: string[];
 }
 
-function jsonify(thingObject: PrimitiveObject | ArrayObject | ObjectObject) {
+function jsonify(
+  thingObject: PrimitiveObject | ArrayObject | ObjectObject,
+): SomeJson {
   if (thingObject.type === 'array') {
     const arrayJson: ArrayJson = {
       type: thingObject.type,
@@ -48,15 +64,13 @@ function jsonify(thingObject: PrimitiveObject | ArrayObject | ObjectObject) {
     const objectJson: ObjectJson = {
       type: thingObject.type,
       path: thingObject.path,
-      keys: Object.entries(thingObject.keys).reduce<Record<string, any>>(
+      keys: Object.entries(thingObject.keys).reduce<ObjectJson['keys']>(
         (acc, [key, valuesObj]) => {
-          const values: Record<string, any> = {
+          acc[key] = {
             values: Object.values(valuesObj.values).map(v => jsonify(v)),
+            ...(valuesObj.optional ? { optional: valuesObj.optional } : null),
           };
-          if (valuesObj.optional) {
-            values.optional = valuesObj.optional;
-          }
-          acc[key] = values;
+
           return acc;
         },
         {},

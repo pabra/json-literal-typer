@@ -435,7 +435,7 @@ const forcedConfig: Config = { byPath: { $: { forceType: true } } };
 function typify(
   result: PrimitiveObject | ArrayObject | ObjectObject,
   conf: Config = { byPath: {} },
-) {
+): string {
   const nodes: Nodes = { byPath: {}, byOrder: [] };
   const identifiers = new Set<string>();
   const config: Config = { ...baseConfig, ...conf, ...forcedConfig } as const;

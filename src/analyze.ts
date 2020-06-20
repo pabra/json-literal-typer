@@ -389,7 +389,7 @@ function inspect(
   return inspectedObject;
 }
 
-function analyze(thing: unknown) {
+function analyze(thing: unknown): ArrayObject | ObjectObject | PrimitiveObject {
   return inspect(thing, null, 'root', '$');
 }
 
