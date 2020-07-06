@@ -1,7 +1,7 @@
 # JSON literal typer
 
 [![unit-tests](https://github.com/pabra/json-literal-typer/workflows/unit-tests/badge.svg?branch=master)](https://github.com/pabra/json-literal-typer/actions?query=branch%3Amaster+workflow%3Aunit-tests)
-[![unit-tests](https://github.com/pabra/json-literal-typer/workflows/npm-publish/badge.svg)](https://github.com/pabra/json-literal-typer/actions?query=workflow%3Anpm-publish)
+[![npm-publish](https://github.com/pabra/json-literal-typer/workflows/npm-publish/badge.svg)](https://github.com/pabra/json-literal-typer/actions?query=workflow%3Anpm-publish)
 [![codecov](https://codecov.io/gh/pabra/json-literal-typer/branch/master/graph/badge.svg)](https://codecov.io/gh/pabra/json-literal-typer)
 
 There are some tools out there that will produce TypeScript Interfaces from a
