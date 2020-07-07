@@ -1,5 +1,6 @@
 # JSON literal typer
 
+[![npm version](https://badge.fury.io/js/json-literal-typer.svg)](https://www.npmjs.com/package/json-literal-typer)
 [![unit-tests](https://github.com/pabra/json-literal-typer/workflows/unit-tests/badge.svg?branch=master)](https://github.com/pabra/json-literal-typer/actions?query=branch%3Amaster+workflow%3Aunit-tests)
 [![npm-publish](https://github.com/pabra/json-literal-typer/workflows/npm-publish/badge.svg)](https://github.com/pabra/json-literal-typer/actions?query=workflow%3Anpm-publish)
 [![codecov](https://codecov.io/gh/pabra/json-literal-typer/branch/master/graph/badge.svg)](https://codecov.io/gh/pabra/json-literal-typer)
