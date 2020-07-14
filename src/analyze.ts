@@ -413,8 +413,11 @@ function inspect(
   return inspectedObject;
 }
 
-function analyze(thing: unknown): ArrayObject | ObjectObject | PrimitiveObject {
-  return inspect(thing, null, 'root', '$');
+function analyze(
+  thing: unknown,
+  rootTypeName = 'root',
+): ArrayObject | ObjectObject | PrimitiveObject {
+  return inspect(thing, null, rootTypeName, '$');
 }
 
 export default analyze;
