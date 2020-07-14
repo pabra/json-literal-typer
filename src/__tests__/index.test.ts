@@ -17,6 +17,13 @@ const testData = [
     tsOut: 'type Root = "str";',
   },
   {
+    name: 'custom root type name',
+    in: 'str',
+    rootName: 'MyType',
+    jsonOut: { path: '$', type: 'string', values: ['str'] },
+    tsOut: 'type MyType = "str";',
+  },
+  {
     name: 'plain string with "double quotes"',
     in: 'str with "double quotes"',
     jsonOut: {
@@ -699,7 +706,7 @@ beforeAll(async () => {
 
 describe('test typification', () => {
   for (const data of testData) {
-    const analyzed = analyze(data.in);
+    const analyzed = analyze(data.in, data.rootName);
     const jsonified = jsonify(analyzed);
     const typified = typify(analyzed, data.config);
 
@@ -712,7 +719,9 @@ describe('test typification', () => {
     });
 
     it('should produce compileable typescript for: ' + data.name, async () => {
-      const str = `${typified}\nconst i: Root = ${JSON.stringify(data.in)}`;
+      const str = `${typified}\nconst i: ${
+        data.rootName || 'Root'
+      } = ${JSON.stringify(data.in)}`;
       const compiled = await compile(
         str,
         data.name.replace(/\s/g, '_').replace(/[^a-zA-Z0-9_-]/g, ''),
