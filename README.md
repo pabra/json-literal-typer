@@ -9,6 +9,15 @@ given JSON structure for you. But they only give you the basic types (`sting`,
 `number`, etc.). What if there is an API where you want to get its literal
 values/types?
 
+# Install
+
+```bash
+# to add to your project
+npm install json-literal-typer
+# to use command line interface
+npm install --global json-literal-typer
+```
+
 # Demo
 
 There is a live demo at [https://json-literal-typer.peppnet.de](https://json-literal-typer.peppnet.de)
@@ -69,6 +78,12 @@ interface Stations {
 interface Root {
   stations: Stations[];
 }
+```
+
+# CLI
+
+```bash
+npm show json-literal-typer versions --json | json-literal-typer
 ```
 
 # related or inspiring projects
