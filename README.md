@@ -6,7 +6,7 @@
 [![codecov](https://codecov.io/gh/pabra/json-literal-typer/branch/master/graph/badge.svg)](https://codecov.io/gh/pabra/json-literal-typer)
 
 There are some tools out there that will produce TypeScript Interfaces from a
-given JSON structure for you. But they only give you the basic types (`sting`,
+given JSON structure for you. But they only give you the basic types (`string`,
 `number`, etc.). What if there is an API where you want to get its literal
 values/types?
 
