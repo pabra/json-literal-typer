@@ -11,14 +11,14 @@
     "dist"
   ],
   "scripts": {
-    "clean:test": "rimraf src/__tests__/out/*",
+    "clean:test": "rimraf __tests__/out/*",
     "clean:coverage": "rimraf coverage/*",
     "clean:build": "rimraf dist/*",
     "clean:build:cjs": "rimraf dist/cjs/*",
     "clean:build:esm": "rimraf dist/esm/*",
-    "format": "prettier --write \"src/**/*.{js,ts,jsx,tsx,json,html,css,scss,yml,yaml}\"",
-    "format:check": "prettier --check \"src/**/*.{js,ts,jsx,tsx,json,html,css,scss,yml,yaml}\"",
-    "lint": "eslint \"src/**/*.{js,ts,jsx,tsx}\"",
+    "format": "prettier --write \"{src,__tests__}/**/*.{js,ts,jsx,tsx,json,html,css,scss,yml,yaml}\"",
+    "format:check": "prettier --check \"{src,__tests__}/**/*.{js,ts,jsx,tsx,json,html,css,scss,yml,yaml}\"",
+    "lint": "eslint \"{src,__tests__}/**/*.{js,ts,jsx,tsx}\"",
     "pretest": "npm run clean:test",
     "test": "jest",
     "pretest:coverage": "npm run clean:coverage",

@@ -3,7 +3,7 @@ import { normalize } from 'path';
 import rimraf from 'rimraf';
 import ts from 'typescript';
 import { promisify } from 'util';
-import analyze, { jsonify, typify } from '../';
+import analyze, { jsonify, typify } from '../src/';
 const existsP = promisify(exists);
 const mkdirP = promisify(mkdir);
 const rimrafP = promisify(rimraf);
@@ -683,8 +683,8 @@ const tsOptions = {
   target: ts.ScriptTarget.ES5,
   module: ts.ModuleKind.CommonJS,
   declaration: true,
-  outDir: './src/__tests__/out',
-  exclude: ['node_modules', 'lib', '**/__tests__/*', 'src/__tests__'],
+  outDir: './__tests__/out',
+  exclude: ['node_modules', 'lib', '**/__tests__/*', '__tests__'],
   strict: true,
   esModuleInterop: true,
   forceConsistentCasingInFileNames: true,
