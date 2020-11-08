@@ -1,6 +1,6 @@
 {
   "name": "json-literal-typer",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "generates literal typescript iterfaces from JSON",
   "sideEffects": false,
   "bin": "dist/cjs/cli.js",
