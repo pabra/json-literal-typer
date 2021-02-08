@@ -43,7 +43,7 @@ jobs:
 
       # getting and storing cache takes about 1:20 min each on windows
       - if: ${{ matrix.os != 'windows-latest' && ( matrix.os == 'ubuntu-latest' || matrix.node == 12 ) }}
-        uses: actions/cache@v2
+        uses: actions/cache@v2.1.4
         id: cache
         with:
           path: ${{ steps.npm-cache.outputs.dir }}
