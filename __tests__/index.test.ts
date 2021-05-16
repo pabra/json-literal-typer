@@ -166,8 +166,7 @@ const testData = [
     tsOut: 'interface Root {\n  "2numberStart": 1;\n}',
   },
   {
-    name:
-      'objects with non-word characters in keys replace chars with "X" in TypeScript interfaces',
+    name: 'objects with non-word characters in keys replace chars with "X" in TypeScript interfaces',
     in: {
       data: {
         'item1_*': { a: 1 },
@@ -194,8 +193,7 @@ const testData = [
                           values: [
                             {
                               type: 'number',
-                              path:
-                                "$['data']{object}['item1_*']{object}['a']{number}",
+                              path: "$['data']{object}['item1_*']{object}['a']{number}",
                               values: [1],
                             },
                           ],
@@ -214,8 +212,7 @@ const testData = [
                           values: [
                             {
                               type: 'number',
-                              path:
-                                "$['data']{object}['item2_*']{object}['b']{number}",
+                              path: "$['data']{object}['item2_*']{object}['b']{number}",
                               values: [2],
                             },
                           ],
@@ -297,14 +294,12 @@ const testData = [
                               values: [
                                 {
                                   type: 'number',
-                                  path:
-                                    "$['data']{array}[*]{object}['a']{object}['x']{number}",
+                                  path: "$['data']{array}[*]{object}['a']{object}['x']{number}",
                                   values: [2, 1],
                                 },
                                 {
                                   type: 'string',
-                                  path:
-                                    "$['data']{array}[*]{object}['a']{object}['x']{string}",
+                                  path: "$['data']{array}[*]{object}['a']{object}['x']{string}",
                                   values: ['1'],
                                 },
                               ],
@@ -332,8 +327,7 @@ const testData = [
                               values: [
                                 {
                                   type: 'string',
-                                  path:
-                                    "$['data']{array}[*]{object}['b']{object}['x']{string}",
+                                  path: "$['data']{array}[*]{object}['b']{object}['x']{string}",
                                   values: ['3'],
                                 },
                               ],
@@ -351,23 +345,19 @@ const testData = [
                           values: [
                             {
                               type: 'string',
-                              path:
-                                "$['data']{array}[*]{object}['b']{array}[*]{string}",
+                              path: "$['data']{array}[*]{object}['b']{array}[*]{string}",
                               values: ['c', 'B', 'a'],
                             },
                             {
-                              path:
-                                "$['data']{array}[*]{object}['b']{array}[*]{null}",
+                              path: "$['data']{array}[*]{object}['b']{array}[*]{null}",
                               type: 'null',
                             },
                             {
-                              path:
-                                "$['data']{array}[*]{object}['b']{array}[*]{array}",
+                              path: "$['data']{array}[*]{object}['b']{array}[*]{array}",
                               type: 'array',
                               values: [
                                 {
-                                  path:
-                                    "$['data']{array}[*]{object}['b']{array}[*]{array}[*]{boolean}",
+                                  path: "$['data']{array}[*]{object}['b']{array}[*]{array}[*]{boolean}",
                                   type: 'boolean',
                                   values: [true],
                                 },
@@ -496,8 +486,7 @@ const testData = [
                           values: [
                             {
                               type: 'string',
-                              path:
-                                "$['data']{array}[*]{object}['strArr']{array}[*]{string}",
+                              path: "$['data']{array}[*]{object}['strArr']{array}[*]{string}",
                               values: ['d', 'e'],
                             },
                           ],
@@ -521,15 +510,13 @@ const testData = [
                           values: [
                             {
                               type: 'object',
-                              path:
-                                "$['data']{array}[*]{object}['optArr']{array}[*]{object}",
+                              path: "$['data']{array}[*]{object}['optArr']{array}[*]{object}",
                               keys: {
                                 bool: {
                                   values: [
                                     {
                                       type: 'boolean',
-                                      path:
-                                        "$['data']{array}[*]{object}['optArr']{array}[*]{object}['bool']{boolean}",
+                                      path: "$['data']{array}[*]{object}['optArr']{array}[*]{object}['bool']{boolean}",
                                       values: [true, false],
                                     },
                                   ],
@@ -538,25 +525,21 @@ const testData = [
                                   values: [
                                     {
                                       type: 'number',
-                                      path:
-                                        "$['data']{array}[*]{object}['optArr']{array}[*]{object}['mixArr']{number}",
+                                      path: "$['data']{array}[*]{object}['optArr']{array}[*]{object}['mixArr']{number}",
                                       values: [4],
                                     },
                                     {
                                       type: 'array',
-                                      path:
-                                        "$['data']{array}[*]{object}['optArr']{array}[*]{object}['mixArr']{array}",
+                                      path: "$['data']{array}[*]{object}['optArr']{array}[*]{object}['mixArr']{array}",
                                       values: [
                                         {
                                           type: 'string',
-                                          path:
-                                            "$['data']{array}[*]{object}['optArr']{array}[*]{object}['mixArr']{array}[*]{string}",
+                                          path: "$['data']{array}[*]{object}['optArr']{array}[*]{object}['mixArr']{array}[*]{string}",
                                           values: ['f'],
                                         },
                                         {
                                           type: 'number',
-                                          path:
-                                            "$['data']{array}[*]{object}['optArr']{array}[*]{object}['mixArr']{array}[*]{number}",
+                                          path: "$['data']{array}[*]{object}['optArr']{array}[*]{object}['mixArr']{array}[*]{number}",
                                           values: [5],
                                         },
                                       ],
@@ -567,8 +550,7 @@ const testData = [
                                   values: [
                                     {
                                       type: 'array',
-                                      path:
-                                        "$['data']{array}[*]{object}['optArr']{array}[*]{object}['optNeverArr']{array}",
+                                      path: "$['data']{array}[*]{object}['optArr']{array}[*]{object}['optNeverArr']{array}",
                                       values: [],
                                     },
                                   ],
@@ -578,15 +560,13 @@ const testData = [
                                   values: [
                                     {
                                       type: 'object',
-                                      path:
-                                        "$['data']{array}[*]{object}['optArr']{array}[*]{object}['root']{object}",
+                                      path: "$['data']{array}[*]{object}['optArr']{array}[*]{object}['root']{object}",
                                       keys: {
                                         r: {
                                           values: [
                                             {
                                               type: 'string',
-                                              path:
-                                                "$['data']{array}[*]{object}['optArr']{array}[*]{object}['root']{object}['r']{string}",
+                                              path: "$['data']{array}[*]{object}['optArr']{array}[*]{object}['root']{object}['r']{string}",
                                               values: [
                                                 'should not become Root',
                                               ],
