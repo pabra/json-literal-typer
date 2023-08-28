@@ -9,7 +9,14 @@ const mkdirP = promisify(mkdir);
 const rimrafP = promisify(rimraf);
 const writeFileP = promisify(writeFile);
 
-const testData = [
+const testData: {
+  name: string,
+  in: any,
+  rootName?: string,
+  jsonOut: any,
+  tsOut?: string
+  config?: Parameters<typeof typify>[1]
+}[] = [
   {
     name: 'plain string',
     in: 'str',
@@ -616,6 +623,84 @@ const testData = [
       '  data: Data[];',
       '}',
     ].join('\n'),
+  },
+  {
+    name: 'plain string with export',
+    in: 'str',
+    jsonOut: { path: '$', type: 'string', values: ['str'] },
+    tsOut: 'export type Root = "str";',
+    config: {
+      byPath: {
+        "$": {
+          export: true,
+        },
+      },
+    },
+  },
+  {
+    name: 'plain number with export',
+    in: 5,
+    jsonOut: { path: '$', type: 'number', values: [5] },
+    tsOut: 'export type Root = 5;',
+    config: {
+      byPath: {
+        "$": {
+          export: true,
+        },
+      },
+    },
+  },
+  {
+    name: 'plain boolean with export',
+    in: false,
+    jsonOut: { path: '$', type: 'boolean', values: [false] },
+    tsOut: 'export type Root = false;',
+    config: {
+      byPath: {
+        "$": {
+          export: true,
+        },
+      },
+    },
+  },
+  {
+    name: 'plain null with export',
+    in: null,
+    jsonOut: { path: '$', type: 'null' },
+    tsOut: 'export type Root = null;',
+    config: {
+      byPath: {
+        "$": {
+          export: true,
+        },
+      },
+    },
+  },
+  {
+    name: 'plain object with export',
+    in: {},
+    jsonOut: { keys: {}, path: '$', type: 'object' },
+    tsOut: 'export interface Root {\n  \n}',
+    config: {
+      byPath: {
+        "$": {
+          export: true,
+        },
+      },
+    },
+  },
+  {
+    name: 'plain array with export',
+    in: [],
+    jsonOut: { path: '$', type: 'array', values: [] },
+    tsOut: 'export type Root = never[];',
+    config: {
+      byPath: {
+        "$": {
+          export: true,
+        },
+      },
+    },
   },
 ];
 
